@@ -4,89 +4,90 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".EventDetailActivity">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical|center_horizontal"
-        android:layout_weight="1"
-        android:textSize="60pt"
-        android:background="#6495ed"
-        android:text="23:59" />
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="6"
-        android:orientation="vertical" >
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
-            android:textSize="12pt"
+            android:textSize="15pt"
             android:background="#6495ed"
-            android:id="@+id/text_history1"
-            android:text="11/11 13:40 振るイベント対応" />
+            android:text="[発生日時]" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
-            android:textSize="12pt"
+            android:textSize="15pt"
             android:background="#6495ed"
-            android:id="@+id/text_history2"
-            android:text="11/11 13:30 振るイベント発生" />
+            android:id="@+id/text_occured_date"
+
+            android:text="2018年11月10日(土) 23:45:32" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
-            android:textSize="12pt"
+            android:textSize="15pt"
             android:background="#6495ed"
-            android:id="@+id/text_history3"
-            android:text="11/11  7:01 起床イベント対応" />
+            android:text="[発生イベント]" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
-            android:textSize="12pt"
+            android:textSize="15pt"
             android:background="#6495ed"
-            android:id="@+id/text_history4"
-            android:text="11/11  7:00 起床イベント発生" />
+            android:id="@+id/text_event_name"
+            android:text="温度異常解消" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
-            android:textSize="12pt"
+            android:textSize="15pt"
             android:background="#6495ed"
-            android:id="@+id/text_history5"
-            android:text="11/10 23:45 温度異常解消" />
+            android:text="[イベント詳細]" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
+            android:layout_weight="3"
+            android:textSize="15pt"
             android:background="#6495ed"
-            android:id="@+id/text_history6"
-            android:text="11/10 23:40 温度異常検知" />
-        <TextView
+            android:id="@+id/text_event_content"
+            android:text="温度が29.4℃(30℃以下)になりました" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical|center_horizontal"
+            android:layout_gravity="center_vertical|center_horizontal"
             android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:text="..." />
+            android:background="#6495ed">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal|center_vertical"
+                    android:textSize="15pt"
+                    android:id="@+id/button_ok"
+                    android:text=" O K " />
+            </FrameLayout>
+        </LinearLayout>
 
     </LinearLayout>
-    </LinearLayout>
-
-
 </android.support.constraint.ConstraintLayout>
