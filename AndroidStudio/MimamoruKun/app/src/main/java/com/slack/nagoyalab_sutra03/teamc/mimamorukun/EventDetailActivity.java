@@ -8,6 +8,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class EventDetailActivity extends Activity implements OnClickListener {
 
@@ -15,6 +16,8 @@ public class EventDetailActivity extends Activity implements OnClickListener {
     private TextView text_occured_date;
     private TextView text_event_name;
     private TextView text_event_content;
+
+    private Event event;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,12 +31,22 @@ public class EventDetailActivity extends Activity implements OnClickListener {
         text_event_name = findViewById(R.id.text_event_name);
         text_event_content = findViewById(R.id.text_event_content);
 
-        //親画面から渡されたイベント情報を取得して表示
+        //親画面から値を取得
         Intent intent = getIntent();
-        java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分");
-        text_occured_date.setText(sdf.format(new java.util.Date(intent.getLongExtra("DATE", 0))));
-        text_event_name.setText(intent.getStringExtra("NAME"));
-        text_event_content.setText(intent.getStringExtra("CONTENT"));
+        event = EventManager.getEventFromIntent(intent);
+
+        //取得した値を表示
+        displayEvent(event);
+    }
+
+    /*
+      指定されたEventオブジェクトを画面に表示する
+     */
+    private void displayEvent(Event event){
+        java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分", new Locale("ja", "JP", "JP"));
+        text_occured_date.setText(sdf.format(event.getOccurredDate()));
+        text_event_name.setText(event.getTitle());
+        text_event_content.setText(event.getContent());
     }
 
     //ボタンクリック時の関数

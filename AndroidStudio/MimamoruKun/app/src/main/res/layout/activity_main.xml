@@ -8,85 +8,95 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical|center_horizontal"
-        android:layout_weight="1"
-        android:textSize="60pt"
+        android:orientation="vertical"
         android:background="#6495ed"
-        android:text="23:59" />
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="6"
-        android:orientation="vertical" >
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:id="@+id/text_history1"
-            android:text="11/11 13:40 振るイベント対応" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:id="@+id/text_history2"
-            android:text="11/11 13:30 振るイベント発生" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:id="@+id/text_history3"
-            android:text="11/11  7:01 起床イベント対応" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:id="@+id/text_history4"
-            android:text="11/11  7:00 起床イベント発生" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:id="@+id/text_history5"
-            android:text="11/10 23:45 温度異常解消" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:id="@+id/text_history6"
-            android:text="11/10 23:40 温度異常検知" />
+        >
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical|center_horizontal"
             android:layout_weight="1"
-            android:textSize="12pt"
-            android:background="#6495ed"
-            android:text="..." />
-
+            android:textSize="60pt"
+            android:id="@+id/textview_time"
+            android:text="99:99" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="6"
+            android:orientation="vertical" >
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:textSize="12pt"
+                android:id="@+id/text_history1"
+                android:text="xx/xx xx:xx xxxxxxxxxxx" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:textSize="12pt"
+                android:id="@+id/text_history2"
+                android:text="xx/xx xx:xx xxxxxxxxxxx" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:textSize="12pt"
+                android:id="@+id/text_history3"
+                android:text="xx/xx xx:xx xxxxxxxxxxx" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:textSize="12pt"
+                android:id="@+id/text_history4"
+                android:text="xx/xx xx:xx xxxxxxxxxxx" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:textSize="12pt"
+                android:id="@+id/text_history5"
+                android:text="xx/xx xx:xx xxxxxxxxxxx" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_weight="1"
+                android:textSize="12pt"
+                android:id="@+id/text_history6"
+                android:text="xx/xx xx:xx xxxxxxxxxxx" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal"
+                android:orientation="horizontal"
+                android:layout_weight="1">
+                <Button
+                   android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="8pt"
+                    android:id="@+id/button_simulate_light_event"
+                    android:text="(光event)" />
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="8pt"
+                    android:id="@+id/button_simulate_swing_event"
+                    android:text="(振動event)" />
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="8pt"
+                    android:id="@+id/button_simulate_temperature_event"
+                    android:text="(温度event)" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
-    </LinearLayout>
-
-
 </android.support.constraint.ConstraintLayout>

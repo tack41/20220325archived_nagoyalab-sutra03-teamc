@@ -4,13 +4,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".EventDetailActivity">
-
+    tools:context=".HandlingRequiredEventActivity">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#6495ed">
+        android:background="#66cdaa"
+        android:id="@+id/linearlayout_top">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="15pt"
+            android:id="@+id/textview_title"
+            android:text="...イベントが発生しました。" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -18,54 +26,34 @@
             android:layout_weight="1"
             android:textSize="15pt"
             android:text="[発生日時]" />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
             android:textSize="15pt"
-            android:id="@+id/text_occured_date"
+            android:id="@+id/textview_occured_date"
             android:text="xxxx年xx月xx日 xx:xx:xx" />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:layout_weight="1"
-            android:textSize="15pt"
-            android:text="[発生イベント]" />
-
-        <TextView
+            android:textSize="10pt"
+            android:text="対応が完了したら内容を以下に記入してOKをタップしてください" />
+        <EditText
+            android:id="@+id/edittext_comment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="15pt"
-            android:id="@+id/text_event_name"
-            android:text="xxxxxxxx" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:textSize="15pt"
-            android:text="[イベント詳細]" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
             android:layout_weight="3"
             android:textSize="15pt"
-            android:id="@+id/text_event_content"
-            android:text="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
-
+            android:background="#FFFFFF"
+            android:text="" />
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
             android:layout_weight="1">
 
             <Button
@@ -76,6 +64,5 @@
                 android:id="@+id/button_ok"
                 android:text=" O K " />
         </FrameLayout>
-
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>

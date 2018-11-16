@@ -3,24 +3,49 @@ package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TextView;
+
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEventListener;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
 
-public class MainActivity extends Activity implements OnClickListener {
+public class MainActivity extends Activity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener {
 
+    private TextView textview_time;
     private List<TextView> textViewList;
-    private List<EventHistory> eventHistoryList;
+    private List<Event> eventList;
+
+    //各イベント発生をシミュレートするボタン
+    private Button button_simulate_light_event;
+    private Button button_simulate_swing_event;
+    private Button button_simulate_temperature_event;
+
+    //タイマーのイベントハンドラにてUIスレッドを取得するために生成
+    Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        textview_time = findViewById(R.id.textview_time);
 
         textViewList = new ArrayList<>();
         textViewList.add((TextView)findViewById(R.id.text_history1));
@@ -34,28 +59,116 @@ public class MainActivity extends Activity implements OnClickListener {
             textViewList.get(i).setOnClickListener(this);
         }
 
+        button_simulate_light_event = findViewById(R.id.button_simulate_light_event);
+        button_simulate_light_event.setOnClickListener(this);
+        button_simulate_swing_event = findViewById(R.id.button_simulate_swing_event);
+        button_simulate_swing_event.setOnClickListener(this);
+        button_simulate_temperature_event = findViewById(R.id.button_simulate_temperature_event);
+        button_simulate_temperature_event.setOnClickListener(this);
+
+        SensorManager.addLightEventListener(this);
+        SensorManager.addSwingEventListener(this);
+        SensorManager.addTemperatureEventListener(this);
+
         //イベント履歴を取得
         getEventHistory();
 
         //イベント履歴を表示
         displayEventHistory();
+
+        //時刻を定期的に更新
+        Timer timer = new Timer(true);
+        timer.schedule(  new TimerTask(){
+            @Override
+            public void run() {
+                handler.post( new Runnable() {
+                    public void run() {
+                        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm",new Locale("ja", "JP", "JP"));
+                        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
+                        textview_time.setText(sdf.format(new java.util.Date()));
+                    }
+                });
+            }
+        }, 0, 1000); //1秒おきに時間を更新
     }
 
-    //ボタンクリック時の関数
     @Override
     public void onClick(View v) {
 
+        //イベント詳細画面に遷移
         for(int i=0; i<textViewList.size(); i++){
             if(v == textViewList.get(i)){
+                Event event = eventList.get(eventList.size()-i-1);
                 Intent intent = new Intent(this, EventDetailActivity.class);
-
-                EventHistory history = eventHistoryList.get(i);
-                intent.putExtra("DATE", history.getOccuredDate().getDate());
-                intent.putExtra("NAME", history.getEventName());
-                intent.putExtra("CONTENT", history.getEventContent());
-
+                EventManager.putEventToIntent(intent, event);
                 startActivityForResult(intent, 0);
             }
+        }
+
+        //各イベント発生を手動で発生
+        if(v == button_simulate_light_event){
+            SensorManager.fireLighted(false);
+        }else if(v == button_simulate_swing_event){
+            SensorManager.fireSwinged(false);
+        }else if(v == button_simulate_temperature_event){
+            SensorManager.fireTemperatured(false, 35.0);
+        }
+    }
+
+    /*
+      光イベント検知時のEventHandlerの仮実装
+     */
+    @Override
+    public void onLighted(LightEvent e){
+        if(!e.isNormal()){
+            //Eventオブジェクトを生成
+            Event event = new Event();
+            event.setType(EventType.Light);
+            event.setContent("端末が光を検知しました");
+            event.setOccurredDate(new java.util.Date());
+
+            //イベント対応画面に遷移
+            Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+            EventManager.putEventToIntent(intent, event);
+            startActivityForResult(intent, 0);
+        }
+    }
+
+    /*
+      振動イベント検知時のEventHandlerの仮実装
+     */
+    @Override
+    public void onSwinged(SwingEvent e){
+        if(!e.isNormal()){
+            //Eventオブジェクトを生成
+            Event event = new Event();
+            event.setType(EventType.Swing);
+            event.setContent("端末が振動を検知しました");
+            event.setOccurredDate(new java.util.Date());
+
+            //イベント対応画面に遷移
+            Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+            EventManager.putEventToIntent(intent, event);
+            startActivityForResult(intent, 0);
+        }
+    }
+
+    /*
+      温度イベント検知時のEventHandlerの仮実装
+     */
+    @Override
+    public void onTemperatured(TemperatureEvent e){
+        if(!e.isNormal()){
+            //Eventオブジェクトを生成
+            Event event = new Event();
+            event.setType(EventType.Temperature);
+            event.setContent("温度異常を検知しました(" + e.getTemperature() + "℃)");
+            event.setOccurredDate(new java.util.Date());
+
+            //イベント対応画面に遷移
+            Intent intent = new Intent(this, TemperatureEventActivity.class);
+            EventManager.putEventToIntent(intent, event);
+            startActivityForResult(intent, 0);
         }
     }
 
@@ -63,49 +176,7 @@ public class MainActivity extends Activity implements OnClickListener {
     イベント履歴取得メソッドの仮実装
      */
     private void getEventHistory(){
-        this.eventHistoryList = new ArrayList<>();
-
-        //1件目
-        EventHistory history = new EventHistory();
-        history.setOccuredDate(new GregorianCalendar(2018, 11 - 1, 11, 13, 40, 10).getTime());
-        history.setEventName("振るイベント対応");
-        history.setEventContents("対応コメント: トイレに付き添いました。");
-        this.eventHistoryList.add(history);
-
-        //2件目
-        history = new EventHistory();
-        history.setOccuredDate(new GregorianCalendar(2018, 11 - 1, 11, 13, 30, 25).getTime());
-        history.setEventName("振るイベント発生");
-        history.setEventContents("振るイベントが発生しました。");
-        this.eventHistoryList.add(history);
-
-        //3件目
-        history = new EventHistory();
-        history.setOccuredDate(new GregorianCalendar(2018, 11 - 1, 11, 7, 1, 53).getTime());
-        history.setEventName("起床イベント対応");
-        history.setEventContents("対応コメント: 確認しました。");
-        this.eventHistoryList.add(history);
-
-        //4件目
-        history = new EventHistory();
-        history.setOccuredDate(new GregorianCalendar(2018, 11 - 1, 11, 7, 0, 3).getTime());
-        history.setEventName("起床イベント発生");
-        history.setEventContents("起床イベントが発生しました。");
-        this.eventHistoryList.add(history);
-
-        //5件目
-        history = new EventHistory();
-        history.setOccuredDate(new GregorianCalendar(2018, 11 - 1, 10, 23, 45, 43).getTime());
-        history.setEventName("温度イベント対応");
-        history.setEventContents("室温が29.4℃(30℃以下)に下がりました。");
-        this.eventHistoryList.add(history);
-
-        //6件目
-        history = new EventHistory();
-        history.setOccuredDate(new GregorianCalendar(2018, 11 - 1, 10, 23, 40, 32).getTime());
-        history.setEventName("温度イベント発生");
-        history.setEventContents("室温が32.5℃(30℃以上)に上がりました。");
-        this.eventHistoryList.add(history);
+        this.eventList = EventManager.getEventList();
     }
 
     /*
@@ -115,11 +186,11 @@ public class MainActivity extends Activity implements OnClickListener {
 
         DateFormat sdf= new SimpleDateFormat("MM/dd");
 
+        //eventListの後ろ(最新)から表示
         for(int i=0; i<6; i++){
-            if(eventHistoryList.size()>i){
-                textViewList.get(i).setText(
-                        sdf.format(eventHistoryList.get(i).getOccuredDate()) +
-                        eventHistoryList.get(i).getEventName());
+            if(eventList.size()-i > 0){
+                Event event = eventList.get(eventList.size()-i-1);
+                textViewList.get(i).setText(sdf.format(event.getOccurredDate()) + event.getTitle());
             }
         }
     }
