@@ -9,7 +9,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventUtility;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -37,7 +37,7 @@ public class EventDetailActivity extends Activity implements OnClickListener {
 
         //親画面から値を取得
         Intent intent = getIntent();
-        event = EventManager.getEventFromIntent(intent);
+        event = EventUtility.getEventFromIntent(intent);
 
         //取得した値を表示
         displayEvent(event);

@@ -8,7 +8,7 @@ import android.view.View.OnClickListener;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
@@ -39,7 +39,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
         //親画面から値を取得
         Intent intent = getIntent();
-        event = EventManager.getEventFromIntent(intent);
+        event = EventUtility.getEventFromIntent(intent);
 
         //取得した値を表示
         displayEvent();
@@ -71,7 +71,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
             //生成したインスタンスをメイン画面に渡す
             Intent intent = new Intent();
-            EventManager.putEventToIntent(intent, event_new);
+            EventUtility.putEventToIntent(intent, event_new);
             this.setResult(RESULT_OK, intent);
 
             //この画面を閉じてメイン画面に戻る

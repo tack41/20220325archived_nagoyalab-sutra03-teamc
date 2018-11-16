@@ -12,7 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
 
 import java.text.SimpleDateFormat;
@@ -45,7 +45,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
         //親画面から値を取得
         Intent intent = getIntent();
-        event = EventManager.getEventFromIntent(intent);
+        event = EventUtility.getEventFromIntent(intent);
 
         //イベントの種類に応じて背景色を変える
         switch(event.getType()){
@@ -90,7 +90,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
             //生成したインスタンスをメイン画面に渡す
             Intent intent = new Intent();
-            EventManager.putEventToIntent(intent, event_new);
+            EventUtility.putEventToIntent(intent, event_new);
             this.setResult(RESULT_OK, intent);
 
             //この画面を閉じてメイン画面に戻る

@@ -10,8 +10,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventSQLiteOpenHelper;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventStoreSQLite;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
@@ -46,13 +45,13 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     Handler handler = new Handler();
 
     //イベントを保存するDB(複数生成するとロックエラーとなるため、これを使いまわす
-    private EventManager _manager;
+    private EventStoreSQLite _store;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        _manager = new EventManager(this);
+        _store = new EventStoreSQLite(this);
 
         setContentView(R.layout.activity_main);
 
@@ -82,7 +81,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         SensorManager.addTemperatureEventListener(this);
 
         //イベント履歴を取得
-        getEventHistory();
+        eventList = _store.getAllEvent();
 
         //イベント履歴を表示
         displayEventHistory();
@@ -112,13 +111,13 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         if(intent != null){
-            Event event = EventManager.getEventFromIntent(intent);
+            Event event = EventUtility.getEventFromIntent(intent);
 
             if(event != null){
-                _manager.insertEvent(event);
+                _store.insertEvent(event);
 
                 //イベント履歴を再度取得して表示
-                getEventHistory();
+                this.eventList = _store.getAllEvent();
                 displayEventHistory();
             }
         }
@@ -132,7 +131,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             if(v == textViewList.get(i)){
                 Event event = eventList.get(eventList.size()-i-1);
                 Intent intent = new Intent(this, EventDetailActivity.class);
-                EventManager.putEventToIntent(intent, event);
+                EventUtility.putEventToIntent(intent, event);
                 startActivityForResult(intent, 0);
             }
         }
@@ -143,7 +142,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             event.setType(EventType.Light);
             event.setContent("光イベント手動発生");
             event.setOccurredDate(new java.util.Date());
-            _manager.insertEvent(event);
+            _store.insertEvent(event);
 
             SensorManager.fireLighted(false);
         }else if(v == button_simulate_swing_event){
@@ -151,7 +150,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             event.setType(EventType.Swing);
             event.setContent("振動イベント手動発生");
             event.setOccurredDate(new java.util.Date());
-            _manager.insertEvent(event);
+            _store.insertEvent(event);
 
             SensorManager.fireSwinged(false);
         }else if(v == button_simulate_temperature_event){
@@ -159,7 +158,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             event.setType(EventType.TemperatureUnusual);
             event.setContent("温度異常イベント手動発生");
             event.setOccurredDate(new java.util.Date());
-            _manager.insertEvent(event);
+            _store.insertEvent(event);
 
             SensorManager.fireTemperatured(false, 35.0);
         }
@@ -179,7 +178,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            EventManager.putEventToIntent(intent, event);
+            EventUtility.putEventToIntent(intent, event);
             startActivityForResult(intent, 0);
         }
     }
@@ -198,7 +197,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            EventManager.putEventToIntent(intent, event);
+            EventUtility.putEventToIntent(intent, event);
             startActivityForResult(intent, 0);
         }
     }
@@ -217,16 +216,9 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
             //イベント対応画面に遷移
             Intent intent = new Intent(this, TemperatureEventActivity.class);
-            EventManager.putEventToIntent(intent, event);
+            EventUtility.putEventToIntent(intent, event);
             startActivityForResult(intent, 0);
         }
-    }
-
-    /*
-    イベント履歴取得メソッドの仮実装
-     */
-    private void getEventHistory(){
-        this.eventList = _manager.getAllEvent();
     }
 
     /*
