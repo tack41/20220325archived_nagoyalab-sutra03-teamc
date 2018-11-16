@@ -1,35 +1,46 @@
-package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
+package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event;
 
-import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 import android.content.Intent;
+import android.content.Context;
 
 /*
   Eventデータを取り扱うクラス
  */
 public class EventManager {
 
-    private static List<Event> eventList;
+    private EventStoreSQLite _store;
 
-    /*
-      過去EventのListを初期化する仮実装
-     */
-    static{
-        eventList = new ArrayList<>();
+    public EventManager(Context context){
+        _store = new EventStoreSQLite(context);
+    }
 
+    public List<Event> getAllEvent() {
+        List<Event> retVal;
+        retVal = _store.getAllEvent();
+
+        //初回のみサンプルデータを追加する。
+        if(retVal.size() == 0){
+            addInitialEvent(retVal);
+        }
+
+        return retVal;
+    }
+
+    private static void addInitialEvent(List<Event> eventList){
         //1件目
         Event event = new Event();
         event = new Event();
         event.setOccurredDate(new GregorianCalendar(2018, 11 - 1, 10, 23, 40, 32).getTime());
-        event.setType(EventType.Temperature);
+        event.setType(EventType.TemperatureUnusual);
         event.setContent("室温が32.5℃(30℃以上)に上がりました。");
         eventList.add(event);
 
         //2件目
         event = new Event();
         event.setOccurredDate(new GregorianCalendar(2018, 11 - 1, 10, 23, 45, 43).getTime());
-        event.setType(EventType.TemperatureBecomeNormal);
+        event.setType(EventType.TemperatureBecomeUsual);
         event.setContent("室温が29.4℃(30℃以下)に下がりました。");
         eventList.add(event);
 
@@ -62,12 +73,8 @@ public class EventManager {
         eventList.add(event);
     }
 
-    public static List<Event> getEventList(){
-        return eventList;
-    }
-
-    public static void addEvent(Event event){
-        eventList.add(event);
+    public void insertEvent(Event event){
+        _store.insertEvent(event);
     }
 
     /*
@@ -81,11 +88,15 @@ public class EventManager {
     }
 
     public static Event getEventFromIntent(Intent intent){
-        Event retVal = new Event();
+        Event retVal = null;
 
-        retVal.setType((EventType)intent.getSerializableExtra("EVENT_TYPE"));
-        retVal.setContent(intent.getStringExtra("EVENT_CONTENT"));
-        retVal.setOccurredDate(new java.util.Date(intent.getLongExtra("EVENT_OCCURRED_DATE", 0)));
+        if(intent.getExtras() != null && intent.getExtras().size() > 0){
+            retVal = new Event();
+
+            retVal.setType((EventType)intent.getSerializableExtra("EVENT_TYPE"));
+            retVal.setContent(intent.getStringExtra("EVENT_CONTENT"));
+            retVal.setOccurredDate(new java.util.Date(intent.getLongExtra("EVENT_OCCURRED_DATE", 0)));
+        }
 
         return retVal;
     }

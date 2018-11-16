@@ -7,6 +7,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -45,7 +49,7 @@ public class EventDetailActivity extends Activity implements OnClickListener {
     private void displayEvent(Event event){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分", new Locale("ja", "JP", "JP"));
         text_occured_date.setText(sdf.format(event.getOccurredDate()));
-        text_event_name.setText(event.getTitle());
+        text_event_name.setText(event.getType().getTitle());
         text_event_content.setText(event.getContent());
     }
 
@@ -54,8 +58,8 @@ public class EventDetailActivity extends Activity implements OnClickListener {
     public void onClick(View v) {
 
         if(v==button_ok){
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivityForResult(intent, 0);
+            //この画面を閉じてメイン画面に戻る
+            finish();
         }
     }
 }

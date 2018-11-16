@@ -11,6 +11,10 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
+
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -59,7 +63,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
     public void displayEvent(){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        textview_title.setText(event.getTitle());
+        textview_title.setText(event.getType().getTitle());
         textview_occured_date.setText(sdf.format(event.getOccurredDate()));
     }
     //ボタンクリック時の関数
@@ -84,12 +88,13 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
             event_new.setOccurredDate(new java.util.Date());
             event_new.setContent("対応コメント:" + edittext_comment.getText().toString());
 
-            //生成したインスタンスを登録
-            EventManager.addEvent(event_new);
+            //生成したインスタンスをメイン画面に渡す
+            Intent intent = new Intent();
+            EventManager.putEventToIntent(intent, event_new);
+            this.setResult(RESULT_OK, intent);
 
-            //メイン画面に戻る
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivityForResult(intent, 0);
+            //この画面を閉じてメイン画面に戻る
+            finish();
         }
     }
 }

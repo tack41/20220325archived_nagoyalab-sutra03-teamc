@@ -9,6 +9,11 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventSQLiteOpenHelper;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventStoreSQLite;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
@@ -40,9 +45,15 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     //タイマーのイベントハンドラにてUIスレッドを取得するために生成
     Handler handler = new Handler();
 
+    //イベントを保存するDB(複数生成するとロックエラーとなるため、これを使いまわす
+    private EventManager _manager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        _manager = new EventManager(this);
+
         setContentView(R.layout.activity_main);
 
         textview_time = findViewById(R.id.textview_time);
@@ -92,6 +103,27 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         }, 0, 1000); //1秒おきに時間を更新
     }
 
+    // startActivityForResult で起動させたアクティビティが
+    // finish() により破棄されたときにコールされる
+    // requestCode : startActivityForResult の第二引数で指定した値が渡される
+    // resultCode : 起動先のActivity.setResult の第一引数が渡される
+    // Intent intent : 起動先Activityから送られてくる Intent
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        if(intent != null){
+            Event event = EventManager.getEventFromIntent(intent);
+
+            if(event != null){
+                _manager.insertEvent(event);
+
+                //イベント履歴を再度取得して表示
+                getEventHistory();
+                displayEventHistory();
+            }
+        }
+    }
+
     @Override
     public void onClick(View v) {
 
@@ -107,10 +139,28 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
         //各イベント発生を手動で発生
         if(v == button_simulate_light_event){
+            Event event = new Event();
+            event.setType(EventType.Light);
+            event.setContent("光イベント手動発生");
+            event.setOccurredDate(new java.util.Date());
+            _manager.insertEvent(event);
+
             SensorManager.fireLighted(false);
         }else if(v == button_simulate_swing_event){
+            Event event = new Event();
+            event.setType(EventType.Swing);
+            event.setContent("振動イベント手動発生");
+            event.setOccurredDate(new java.util.Date());
+            _manager.insertEvent(event);
+
             SensorManager.fireSwinged(false);
         }else if(v == button_simulate_temperature_event){
+            Event event = new Event();
+            event.setType(EventType.TemperatureUnusual);
+            event.setContent("温度異常イベント手動発生");
+            event.setOccurredDate(new java.util.Date());
+            _manager.insertEvent(event);
+
             SensorManager.fireTemperatured(false, 35.0);
         }
     }
@@ -161,7 +211,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         if(!e.isNormal()){
             //Eventオブジェクトを生成
             Event event = new Event();
-            event.setType(EventType.Temperature);
+            event.setType(EventType.TemperatureUnusual);
             event.setContent("温度異常を検知しました(" + e.getTemperature() + "℃)");
             event.setOccurredDate(new java.util.Date());
 
@@ -176,7 +226,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     イベント履歴取得メソッドの仮実装
      */
     private void getEventHistory(){
-        this.eventList = EventManager.getEventList();
+        this.eventList = _manager.getAllEvent();
     }
 
     /*
@@ -190,7 +240,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         for(int i=0; i<6; i++){
             if(eventList.size()-i > 0){
                 Event event = eventList.get(eventList.size()-i-1);
-                textViewList.get(i).setText(sdf.format(event.getOccurredDate()) + event.getTitle());
+                textViewList.get(i).setText(sdf.format(event.getOccurredDate()) + event.getType().getTitle());
             }
         }
     }

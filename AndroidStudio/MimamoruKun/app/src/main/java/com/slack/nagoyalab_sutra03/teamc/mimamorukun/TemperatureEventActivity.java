@@ -7,6 +7,9 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
@@ -43,7 +46,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     }
     public void displayEvent(){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        textview_title.setText(event.getTitle());
+        textview_title.setText(event.getType().getTitle());
         textview_occured_date.setText(sdf.format(event.getOccurredDate()));
     }
 
@@ -62,16 +65,17 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         if(e.isNormal()){
             //Eventオブジェクトを生成
             Event event_new = new Event();
-            event_new.setType(EventType.TemperatureBecomeNormal);
+            event_new.setType(EventType.TemperatureBecomeUsual);
             event_new.setContent("温度が正常(" + e.getTemperature() + "℃)になりました");
             event_new.setOccurredDate(new java.util.Date());
 
-            //生成したインスタンスを登録
-            EventManager.addEvent(event_new);
+            //生成したインスタンスをメイン画面に渡す
+            Intent intent = new Intent();
+            EventManager.putEventToIntent(intent, event_new);
+            this.setResult(RESULT_OK, intent);
 
-            //メイン画面に戻る
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivityForResult(intent, 0);
+            //この画面を閉じてメイン画面に戻る
+            finish();
         }
     }
 }
