@@ -11,9 +11,9 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventUtility;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -29,7 +29,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
     private EditText edittext_comment;
     private Button button_ok;
 
-    private Event event;
+    private EventLog eventLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,10 +45,10 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
         //親画面から値を取得
         Intent intent = getIntent();
-        event = EventUtility.getEventFromIntent(intent);
+        eventLog = EventLogUtility.getEventFromIntent(intent);
 
         //イベントの種類に応じて背景色を変える
-        switch(event.getType()){
+        switch(eventLog.getType()){
             case Light:
                 linearlayout_top.setBackgroundColor(Color.parseColor("#66cdaa"));
                 break;
@@ -63,8 +63,8 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
     public void displayEvent(){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        textview_title.setText(event.getType().getTitle());
-        textview_occured_date.setText(sdf.format(event.getOccurredDate()));
+        textview_title.setText(eventLog.getType().getTitle());
+        textview_occured_date.setText(sdf.format(eventLog.getOccurredDate()));
     }
     //ボタンクリック時の関数
     @Override
@@ -72,25 +72,25 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
         if(v==button_ok){
             //対応完了イベントのインスタンスを生成
-            Event event_new = new Event();
+            EventLog event_Log_new = new EventLog();
 
-            switch(event.getType()){
+            switch(eventLog.getType()){
                 case Swing:
-                    event_new.setType(EventType.SwingHandled);
+                    event_Log_new.setType(EventLogType.SwingHandled);
                     break;
                 case Light:
-                    event_new.setType(EventType.LightHandled);
+                    event_Log_new.setType(EventLogType.LightHandled);
                     break;
                 default:
-                    event_new.setType(EventType.Unknown);
+                    event_Log_new.setType(EventLogType.Unknown);
                     break;
             }
-            event_new.setOccurredDate(new java.util.Date());
-            event_new.setContent("対応コメント:" + edittext_comment.getText().toString());
+            event_Log_new.setOccurredDate(new java.util.Date());
+            event_Log_new.setContent("対応コメント:" + edittext_comment.getText().toString());
 
             //生成したインスタンスをメイン画面に渡す
             Intent intent = new Intent();
-            EventUtility.putEventToIntent(intent, event_new);
+            EventLogUtility.putEventToIntent(intent, event_Log_new);
             this.setResult(RESULT_OK, intent);
 
             //この画面を閉じてメイン画面に戻る

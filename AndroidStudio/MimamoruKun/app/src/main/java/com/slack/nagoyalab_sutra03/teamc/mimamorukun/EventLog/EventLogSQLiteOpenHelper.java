@@ -1,10 +1,10 @@
-package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event;
+package com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
 
-public class EventSQLiteOpenHelper extends SQLiteOpenHelper {
+public class EventLogSQLiteOpenHelper extends SQLiteOpenHelper {
 
     // データーベースのバージョン
     public static final int DATABASE_VERSION = 2;
@@ -18,7 +18,7 @@ public class EventSQLiteOpenHelper extends SQLiteOpenHelper {
                     "content TEXT," +
                     "occurred_date INTEGER)";
 
-    public EventSQLiteOpenHelper(Context context) {
+    public EventLogSQLiteOpenHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 

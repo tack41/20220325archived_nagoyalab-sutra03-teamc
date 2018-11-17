@@ -1,13 +1,13 @@
-package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event;
+package com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog;
 
 import java.util.Date;
 
-public class Event
+public class EventLog
 {
     //イベント種別
-    public EventType eventType;
-    public void setType(EventType eventType){ this.eventType = eventType; }
-    public EventType getType(){ return this.eventType; }
+    public EventLogType eventLogType;
+    public void setType(EventLogType eventLogType){ this.eventLogType = eventLogType; }
+    public EventLogType getType(){ return this.eventLogType; }
 
     //イベント内容
     String content;

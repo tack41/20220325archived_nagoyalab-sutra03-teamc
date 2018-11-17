@@ -1,6 +1,6 @@
-package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event;
+package com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog;
 
-public enum EventType {
+public enum EventLogType {
     //光イベント発生
     Light("Light"),
     //光イベント解消
@@ -22,7 +22,7 @@ public enum EventType {
 
     private final String value;
 
-    EventType(String value){
+    EventLogType(String value){
         this.value = value;
     }
 
@@ -30,7 +30,7 @@ public enum EventType {
         return value;
     }
 
-    public EventType getDefault(){
+    public EventLogType getDefault(){
         return Unknown;
     }
 

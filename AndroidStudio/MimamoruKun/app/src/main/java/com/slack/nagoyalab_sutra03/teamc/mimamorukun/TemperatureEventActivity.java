@@ -7,9 +7,9 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.Event;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventUtility;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Event.EventType;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
@@ -23,7 +23,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     private TextView textview_occured_date;
     private TextView textview_simulate_temperature_event_handled_event;
 
-    private Event event;
+    private EventLog eventLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,15 +39,15 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
         //親画面から値を取得
         Intent intent = getIntent();
-        event = EventUtility.getEventFromIntent(intent);
+        eventLog = EventLogUtility.getEventFromIntent(intent);
 
         //取得した値を表示
         displayEvent();
     }
     public void displayEvent(){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        textview_title.setText(event.getType().getTitle());
-        textview_occured_date.setText(sdf.format(event.getOccurredDate()));
+        textview_title.setText(eventLog.getType().getTitle());
+        textview_occured_date.setText(sdf.format(eventLog.getOccurredDate()));
     }
 
     @Override
@@ -64,14 +64,14 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         //温度異常が解消された場合はメイン画面に戻る
         if(e.isNormal()){
             //Eventオブジェクトを生成
-            Event event_new = new Event();
-            event_new.setType(EventType.TemperatureBecomeUsual);
-            event_new.setContent("温度が正常(" + e.getTemperature() + "℃)になりました");
-            event_new.setOccurredDate(new java.util.Date());
+            EventLog event_Log_new = new EventLog();
+            event_Log_new.setType(EventLogType.TemperatureBecomeUsual);
+            event_Log_new.setContent("温度が正常(" + e.getTemperature() + "℃)になりました");
+            event_Log_new.setOccurredDate(new java.util.Date());
 
             //生成したインスタンスをメイン画面に渡す
             Intent intent = new Intent();
-            EventUtility.putEventToIntent(intent, event_new);
+            EventLogUtility.putEventToIntent(intent, event_Log_new);
             this.setResult(RESULT_OK, intent);
 
             //この画面を閉じてメイン画面に戻る
