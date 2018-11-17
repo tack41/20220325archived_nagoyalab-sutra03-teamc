@@ -68,10 +68,11 @@ public class EventStoreSQLite {
             cursor.close();
         }
 
-        //初回のみサンプルデータを追加する。
+/*        //初回のみサンプルデータを追加する。
         if(retVal.size() == 0){
             addInitialEvent(retVal);
         }
+*/
 
         return retVal;
     }
