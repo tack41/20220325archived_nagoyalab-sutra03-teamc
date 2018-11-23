@@ -21,16 +21,17 @@ import java.util.Locale;
 
 public class TemperatureEventActivity extends Activity implements OnClickListener, TemperatureEventListener {
 
-    private TextView textview_title;
-    private TextView textview_occured_date;
-    private TextView textview_simulate_temperature_event_handled_event;
+    private TextView _textViewTitle;
+    private TextView _textViewOccurredDate;
+    private TextView _textViewSimulateTemperatureEventHandledEvent;
 
-    private EventLog eventLog;
+    private EventLog _eventLog;
 
     //音源
-    private SoundPool soundPool;
-    private int sound_kettle_boiling1;
-    private int sound_decision3;
+    private SoundPool _soundPool;
+    private int _soundAlert;
+    private int _soundOK;
+    private boolean _loadSoundOKFinished = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,51 +39,82 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         setContentView(R.layout.activity_temperature_event);
 
         //Load sound source.
+        loadAndPlaySound();
+
+        //Get UI Instances to handle from code.
+        getUIInstances();
+
+        //Bind sensor events.
+        SensorManager.addTemperatureEventListener(this);
+
+        //Get values from caller activity
+        Intent intent = getIntent();
+        _eventLog = EventLogUtility.getEventFromIntent(intent);
+
+        //Display events.
+        displayEvent(_eventLog);
+    }
+
+    /**
+     * Load sound source to class instance variable.
+     */
+    private void loadAndPlaySound() {
+
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build();
-        soundPool = new SoundPool.Builder()
+
+        _soundPool = new SoundPool.Builder()
                 .setAudioAttributes(audioAttributes)
                 .setMaxStreams(1)
                 .build();
-        sound_kettle_boiling1 = soundPool.load(this, R.raw.kettle_boiling1, 1);
-        sound_decision3 = soundPool.load(this,R.raw.decision3,1);
+
+        _soundAlert = _soundPool.load(this, R.raw.kettle_boiling1, 1);
+        _soundOK = _soundPool.load(this,R.raw.decision3,1);
+
         // Play warning sound continuously after load sound source.
-        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+        _soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
             @Override
             public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
-                soundPool.play(sound_kettle_boiling1, 1.0f, 1.0f, 0, -1, 1);
+                if(_soundAlert == sampleId && 0 == status){
+                    soundPool.play(_soundAlert, 1.0f, 1.0f, 0, -1, 1);
+                }else if(_soundOK == sampleId && 0 == status){
+                    _loadSoundOKFinished = true;
+                }
             }
         });
-
-        textview_title = findViewById(R.id.textview_title);
-        textview_occured_date = findViewById(R.id.textview_occured_date);
-        textview_simulate_temperature_event_handled_event = findViewById(R.id.textview_simulate_temperature_event_handled_event);
-        textview_simulate_temperature_event_handled_event.setOnClickListener(this);
-
-        SensorManager.addTemperatureEventListener(this);
-
-        //親画面から値を取得
-        Intent intent = getIntent();
-        eventLog = EventLogUtility.getEventFromIntent(intent);
-
-        //取得した値を表示
-        displayEvent();
     }
-    public void displayEvent(){
+
+    /**
+     * Get UI Instance and regist event handler.
+     */
+    private void getUIInstances() {
+        _textViewTitle = findViewById(R.id.textview_title);
+        _textViewOccurredDate = findViewById(R.id.textview_occured_date);
+        _textViewSimulateTemperatureEventHandledEvent = findViewById(R.id.textview_simulate_temperature_event_handled_event);
+        _textViewSimulateTemperatureEventHandledEvent.setOnClickListener(this);
+    }
+
+    /**
+     * Dipsplay contents of EventLog instance.
+     * @param eventLog contents to display.
+     */
+    private void displayEvent(EventLog eventLog){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        textview_title.setText(eventLog.getType().getTitle());
-        textview_occured_date.setText(sdf.format(eventLog.getOccurredDate()));
+        _textViewTitle.setText(_eventLog.getType().getTitle());
+        _textViewOccurredDate.setText(sdf.format(_eventLog.getOccurredDate()));
     }
 
     @Override
     public void onClick(View v) {
-        if(v==textview_simulate_temperature_event_handled_event){
+        if(v== _textViewSimulateTemperatureEventHandledEvent){
             //Stop continuous warning sound.
-            soundPool.stop(sound_kettle_boiling1);
-            //Play sound effect of tapping button
-            soundPool.play(sound_decision3, 1.0f, 1.0f, 0, 0, 1);
+            _soundPool.stop(_soundAlert);
+            if(_loadSoundOKFinished){
+                //Play sound effect of tapping button
+                _soundPool.play(_soundOK, 1.0f, 1.0f, 0, 0, 1);
+            }
 
             //温度異常解消イベントを疑似発生
             SensorManager.fireTemperatured(true, 28);
@@ -90,7 +122,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     }
 
     @Override
-    public void onTemperatured(TemperatureEvent e){
+    public void onTemperatureChanged(TemperatureEvent e){
 
         //温度異常が解消された場合はメイン画面に戻る
         if(e.isNormal()){

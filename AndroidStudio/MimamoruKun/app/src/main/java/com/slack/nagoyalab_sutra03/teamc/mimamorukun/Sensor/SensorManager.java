@@ -65,7 +65,7 @@ public class SensorManager{
                 temperature,
                 isNormal ? "温度が閾値範囲となったことを検知" : "温度が閾値範囲外となったことを検知");
         for(TemperatureEventListener listner : temperatureEventList){
-            listner.onTemperatured(event);
+            listner.onTemperatureChanged(event);
         }
     }
 }

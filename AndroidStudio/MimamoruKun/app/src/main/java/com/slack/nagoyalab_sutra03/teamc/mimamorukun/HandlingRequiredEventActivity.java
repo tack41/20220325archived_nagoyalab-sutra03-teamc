@@ -25,91 +25,119 @@ import java.util.Locale;
  */
 public class HandlingRequiredEventActivity extends Activity implements OnClickListener {
 
-    private LinearLayout linearlayout_top;
-    private TextView textview_title;
-    private TextView textview_occured_date;
-    private EditText edittext_comment;
-    private Button button_ok;
+    private LinearLayout _linearLayoutTop;
+    private TextView _textViewTitle;
+    private TextView _textViewOccurredDate;
+    private EditText _editTextComment;
+    private Button _buttonOK;
 
     private EventLog eventLog;
 
     //sound source
-    private SoundPool soundPool;
-    private int sound_bell1;
-    private int sound_passer_mountanus_cry1;
-    private int sound_decision3;
-    private int sound_now_playing;
+    private SoundPool _soundPool;
+    private int _soundSwing;
+    private int _soundLight;
+    private int _soundOK;
+    private int _soundLoop;
+    private boolean _loadSoundOKFinished;
+    private boolean _loadSoundLoopFinished;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_handling_required_event);
 
-        linearlayout_top = findViewById(R.id.linearlayout_top);
-        textview_title = findViewById(R.id.textview_title);
-        textview_occured_date = findViewById(R.id.textview_occured_date);
-        edittext_comment = findViewById(R.id.edittext_comment);
-        button_ok = findViewById(R.id.button_ok);
-        button_ok.setOnClickListener(this);
+        //Get UI Instances to handle from code.
+        getUIInstances();
 
         //親画面から値を取得
         Intent intent = getIntent();
         eventLog = EventLogUtility.getEventFromIntent(intent);
 
-        //Load and play sound effect.
+        //Load sound source.
         loadAndPlaySound(eventLog);
 
         //取得した値を表示
         displayEvent(eventLog);
     }
 
+    /**
+     * Get UI Instance and regist event handler.
+     */
+    private void getUIInstances(){
+        _linearLayoutTop = findViewById(R.id.linearlayout_top);
+        _textViewTitle = findViewById(R.id.textview_title);
+        _textViewOccurredDate = findViewById(R.id.textview_occured_date);
+        _editTextComment = findViewById(R.id.edittext_comment);
+        _buttonOK = findViewById(R.id.button_ok);
+        _buttonOK.setOnClickListener(this);
+    }
+
     private void loadAndPlaySound(EventLog eventLog){
-        //Load sound source.
+
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build();
-        soundPool = new SoundPool.Builder()
+
+        _soundPool = new SoundPool.Builder()
                 .setAudioAttributes(audioAttributes)
                 .setMaxStreams(1)
                 .build();
-        sound_passer_mountanus_cry1 = soundPool.load(this, R.raw.passer_montanus_cry1, 1);
-        sound_bell1 = soundPool.load(this, R.raw.bell1, 1);
-        sound_decision3 = soundPool.load(this,R.raw.decision3,1);
+
+        _soundLight = _soundPool.load(this, R.raw.passer_montanus_cry1, 1);
+        _soundSwing = _soundPool.load(this, R.raw.bell1, 1);
+        _soundOK = _soundPool.load(this,R.raw.decision3,1);
+
         // Play warning sound continuously after load sound source.
-        sound_now_playing = (eventLog.getType() == EventLogType.Swing ? sound_bell1 : sound_passer_mountanus_cry1);
-        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+        _soundLoop = (eventLog.getType() == EventLogType.Swing ? _soundSwing : _soundLight);
+        _soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
             @Override
             public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
-                soundPool.play(sound_now_playing, 1.0f, 1.0f, 0, -1, 1);
+                if(0 == status){
+                    if(_soundLoop == sampleId){
+                        _loadSoundLoopFinished = true;
+                        soundPool.play(_soundLoop, 1.0f, 1.0f, 0, -1, 1);
+                    }else if (_soundOK == sampleId){
+                        _loadSoundOKFinished = true;
+                    }
+                }
             }
         });
     }
 
+    /**
+     * Dipsplay contents of EventLog instance.
+     * @param eventLog contents to display.
+     */
     private void displayEvent(EventLog eventLog){
         //イベントの種類に応じて背景色を変える
         switch(eventLog.getType()){
             case Light:
-                linearlayout_top.setBackgroundColor(Color.parseColor("#66cdaa"));
+                _linearLayoutTop.setBackgroundColor(Color.parseColor("#66cdaa"));
                 break;
             case Swing:
-                linearlayout_top.setBackgroundColor(Color.parseColor("#ffff00"));
+                _linearLayoutTop.setBackgroundColor(Color.parseColor("#ffff00"));
                 break;
         }
 
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        textview_title.setText(eventLog.getType().getTitle());
-        textview_occured_date.setText(sdf.format(eventLog.getOccurredDate()));
+        _textViewTitle.setText(eventLog.getType().getTitle());
+        _textViewOccurredDate.setText(sdf.format(eventLog.getOccurredDate()));
     }
-    //ボタンクリック時の関数
+
     @Override
     public void onClick(View v) {
 
-        if(v==button_ok){
-            //Stop continuous warning sound.
-            soundPool.stop(sound_now_playing);
-            //Play sound effect of tapping button
-            soundPool.play(sound_decision3, 1.0f, 1.0f, 0, 0, 1);
+        if(v== _buttonOK){
+            if(_loadSoundLoopFinished){
+                //Stop continuous warning sound.
+                _soundPool.stop(_soundLoop);
+            }
+            if(_loadSoundOKFinished){
+                //Play sound effect of tapping button
+                _soundPool.play(_soundOK, 1.0f, 1.0f, 0, 0, 1);
+            }
 
             //対応完了イベントのインスタンスを生成
             EventLog event_Log_new = new EventLog();
@@ -126,7 +154,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
                     break;
             }
             event_Log_new.setOccurredDate(new java.util.Date());
-            event_Log_new.setContent("対応コメント:" + edittext_comment.getText().toString());
+            event_Log_new.setContent("対応コメント:" + _editTextComment.getText().toString());
 
             //生成したインスタンスをメイン画面に渡す
             Intent intent = new Intent();
