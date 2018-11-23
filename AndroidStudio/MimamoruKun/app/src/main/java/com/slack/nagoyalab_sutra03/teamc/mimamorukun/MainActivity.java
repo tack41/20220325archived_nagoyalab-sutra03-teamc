@@ -2,6 +2,8 @@ package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -47,9 +49,24 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     //イベントを保存するDB(複数生成するとロックエラーとなるため、これを使いまわす
     private EventLogStoreSQLite _store;
 
+    //sound source
+    private SoundPool soundPool;
+    private int sound_decision3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //Load sound source
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+       soundPool = new SoundPool.Builder()
+                .setAudioAttributes(audioAttributes)
+                .setMaxStreams(1)
+                .build();
+        sound_decision3 = soundPool.load(this, R.raw.decision3, 1);
 
         _store = new EventLogStoreSQLite(this);
 
@@ -125,6 +142,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
     @Override
     public void onClick(View v) {
+        //Play sound effect of tapping button
+        soundPool.play(sound_decision3, 1.0f, 1.0f, 0, 0, 1);
 
         //イベント詳細画面に遷移
         for(int i=0; i<textViewList.size(); i++){

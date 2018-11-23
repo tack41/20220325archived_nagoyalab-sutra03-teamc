@@ -2,6 +2,8 @@ package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -25,10 +27,34 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
     private EventLog eventLog;
 
+    //音源
+    private SoundPool soundPool;
+    private int sound_kettle_boiling1;
+    private int sound_decision3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_temperature_event);
+
+        //Load sound source.
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+        soundPool = new SoundPool.Builder()
+                .setAudioAttributes(audioAttributes)
+                .setMaxStreams(1)
+                .build();
+        sound_kettle_boiling1 = soundPool.load(this, R.raw.kettle_boiling1, 1);
+        sound_decision3 = soundPool.load(this,R.raw.decision3,1);
+        // Play warning sound continuously after load sound source.
+        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                soundPool.play(sound_kettle_boiling1, 1.0f, 1.0f, 0, -1, 1);
+            }
+        });
 
         textview_title = findViewById(R.id.textview_title);
         textview_occured_date = findViewById(R.id.textview_occured_date);
@@ -53,6 +79,11 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     @Override
     public void onClick(View v) {
         if(v==textview_simulate_temperature_event_handled_event){
+            //Stop continuous warning sound.
+            soundPool.stop(sound_kettle_boiling1);
+            //Play sound effect of tapping button
+            soundPool.play(sound_decision3, 1.0f, 1.0f, 0, 0, 1);
+
             //温度異常解消イベントを疑似発生
             SensorManager.fireTemperatured(true, 28);
         }

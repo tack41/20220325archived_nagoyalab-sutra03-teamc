@@ -3,6 +3,8 @@ package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -31,6 +33,13 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
     private EventLog eventLog;
 
+    //sound source
+    private SoundPool soundPool;
+    private int sound_bell1;
+    private int sound_passer_mountanus_cry1;
+    private int sound_decision3;
+    private int sound_now_playing;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,6 +56,37 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         Intent intent = getIntent();
         eventLog = EventLogUtility.getEventFromIntent(intent);
 
+        //Load and play sound effect.
+        loadAndPlaySound(eventLog);
+
+        //取得した値を表示
+        displayEvent(eventLog);
+    }
+
+    private void loadAndPlaySound(EventLog eventLog){
+        //Load sound source.
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+        soundPool = new SoundPool.Builder()
+                .setAudioAttributes(audioAttributes)
+                .setMaxStreams(1)
+                .build();
+        sound_passer_mountanus_cry1 = soundPool.load(this, R.raw.passer_montanus_cry1, 1);
+        sound_bell1 = soundPool.load(this, R.raw.bell1, 1);
+        sound_decision3 = soundPool.load(this,R.raw.decision3,1);
+        // Play warning sound continuously after load sound source.
+        sound_now_playing = (eventLog.getType() == EventLogType.Swing ? sound_bell1 : sound_passer_mountanus_cry1);
+        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                soundPool.play(sound_now_playing, 1.0f, 1.0f, 0, -1, 1);
+            }
+        });
+    }
+
+    private void displayEvent(EventLog eventLog){
         //イベントの種類に応じて背景色を変える
         switch(eventLog.getType()){
             case Light:
@@ -57,11 +97,6 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
                 break;
         }
 
-        //取得した値を表示
-        displayEvent();
-    }
-
-    public void displayEvent(){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
         textview_title.setText(eventLog.getType().getTitle());
         textview_occured_date.setText(sdf.format(eventLog.getOccurredDate()));
@@ -71,6 +106,11 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
     public void onClick(View v) {
 
         if(v==button_ok){
+            //Stop continuous warning sound.
+            soundPool.stop(sound_now_playing);
+            //Play sound effect of tapping button
+            soundPool.play(sound_decision3, 1.0f, 1.0f, 0, 0, 1);
+
             //対応完了イベントのインスタンスを生成
             EventLog event_Log_new = new EventLog();
 

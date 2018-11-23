@@ -2,6 +2,8 @@ package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,10 +25,18 @@ public class EventLogDetailActivity extends Activity implements OnClickListener 
 
     private EventLog eventLog;
 
+    //sound source
+    private SoundPool soundPool;
+    private int sound_decision3;
+    private boolean loadFinished = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_eventlog_detail);
+
+        //Load sound source
+        loadSound();
 
         button_ok = findViewById(R.id.button_ok);
         button_ok.setOnClickListener(this);
@@ -43,8 +53,24 @@ public class EventLogDetailActivity extends Activity implements OnClickListener 
         displayEvent(eventLog);
     }
 
-    /*
-      指定されたEventオブジェクトを画面に表示する
+    /**
+     * Load sound source to class instance variable.
+     */
+    private void loadSound(){
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build();
+        soundPool = new SoundPool.Builder()
+                .setAudioAttributes(audioAttributes)
+                .setMaxStreams(1)
+                .build();
+        sound_decision3 = soundPool.load(this, R.raw.decision3, 1);
+    }
+
+    /**
+     * Dipsplay contents of EventLog instance.
+     * @param eventLog contents to display.
      */
     private void displayEvent(EventLog eventLog){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分", new Locale("ja", "JP", "JP"));
@@ -53,11 +79,13 @@ public class EventLogDetailActivity extends Activity implements OnClickListener 
         text_event_content.setText(eventLog.getContent());
     }
 
-    //ボタンクリック時の関数
     @Override
     public void onClick(View v) {
 
         if(v==button_ok){
+            //Play sound effect of tapping button
+            soundPool.play(sound_decision3, 1.0f, 1.0f, 0, 0, 1);
+
             //この画面を閉じてメイン画面に戻る
             finish();
         }
