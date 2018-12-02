@@ -17,10 +17,12 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import android.support.v4.app.NotificationCompat;
+import android.content.ServiceConnection;
+import android.content.ComponentName;
+import android.os.IBinder;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreSQLite;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
@@ -29,6 +31,7 @@ import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -55,13 +58,32 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     //This class level accessible _handler required to get UI thread in timer event _handler.
     private Handler _handler = new Handler();
 
-    //Database to save event history.
-    private EventLogStoreSQLite _store;
-
     //sound source
     private SoundPool _soundPool;
     private int _soundTapButtonOrEvent;
     private boolean _loadFinished = false;
+
+    EventLogStoreService _eventLogStoreService;
+    // Serviceとのインターフェースクラス
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // Serviceとの接続確立時に呼び出される。
+            // service引数には、Onbind()で返却したBinderが渡される
+            _eventLogStoreService = ((EventLogStoreService.LocalBinder)service).getService();
+            //必要であればmBoundServiceを使ってバインドしたServiceへの制御を行う
+
+            //Get all event history.
+            _eventLogList = _eventLogStoreService.getAllEvent();
+
+            //Display events.
+            displayEventHistory();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // Serviceとの切断時に呼び出される。
+            _eventLogStoreService = null;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +93,6 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         //Load sound source
         loadSound();
 
-        //Create or load DB to save event.
-        _store = new EventLogStoreSQLite(this);
-
         //Get UI Instances to handle from code.
         getUIInstances();
 
@@ -82,11 +101,9 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         SensorManager.addSwingEventListener(this);
         SensorManager.addTemperatureEventListener(this);
 
-        //Get all event history.
-        _eventLogList = _store.getAllEvent();
-
-        //Display events.
-        displayEventHistory();
+        // Bind EventLogStoreService
+        Intent i = new Intent(getBaseContext(), EventLogStoreService.class);
+        boolean ret = bindService(i, mConnection, Context.BIND_AUTO_CREATE);
 
         //Display time.
         displayTime();
@@ -97,6 +114,12 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         channel.setLightColor(Color.YELLOW);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
         manager.createNotificationChannel(channel);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        unbindService(mConnection);
     }
 
     /**
@@ -208,7 +231,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             eventLog.setType(EventLogType.Light);
             eventLog.setContent("光イベント手動発生");
             eventLog.setOccurredDate(new java.util.Date());
-            _store.insertEvent(eventLog);
+            _eventLogStoreService.insertEvent(eventLog);
 
             //Post notification on the channel
             NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -225,7 +248,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             eventLog.setType(EventLogType.Swing);
             eventLog.setContent("振動イベント手動発生");
             eventLog.setOccurredDate(new java.util.Date());
-            _store.insertEvent(eventLog);
+            _eventLogStoreService.insertEvent(eventLog);
 
             //Post notification on the channel
             NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -242,7 +265,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             eventLog.setType(EventLogType.TemperatureUnusual);
             eventLog.setContent("温度異常イベント手動発生");
             eventLog.setOccurredDate(new java.util.Date());
-            _store.insertEvent(eventLog);
+            _eventLogStoreService.insertEvent(eventLog);
 
             //Post notification on the channel
             NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -321,7 +344,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             EventLog eventLog = EventLogUtility.getEventFromIntent(intent);
 
             if(eventLog != null){
-                _store.insertEvent(eventLog);
+                _eventLogStoreService.insertEvent(eventLog);
 
                 //Post notification on the channel
                 NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -333,7 +356,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
                 NotificationManagerCompat.from(this).notify(1, builder.build());
 
                 //イベント履歴を再度取得して表示
-                this._eventLogList = _store.getAllEvent();
+                this._eventLogList = _eventLogStoreService.getAllEvent();
                 displayEventHistory();
             }
         }

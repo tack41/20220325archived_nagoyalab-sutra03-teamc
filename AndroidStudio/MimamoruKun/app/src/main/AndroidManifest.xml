@@ -3,6 +3,9 @@
     package="com.slack.nagoyalab_sutra03.teamc.mimamorukun">
 
     <application
+
+        android:name=".MyApplication"
+
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -19,6 +22,7 @@
         <activity android:name=".EventLogDetailActivity" />
         <activity android:name=".TemperatureEventActivity" />
         <activity android:name=".HandlingRequiredEventActivity"></activity>
+        <service android:name="com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService" />
     </application>
 
 </manifest>
