@@ -111,6 +111,7 @@ public class EventLogDetailActivity extends Activity implements OnClickListener 
             }
 
             //この画面を閉じてメイン画面に戻る
+
             finish();
         }
     }

@@ -1,5 +1,7 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor;
 
+import android.app.NotificationManager;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -138,6 +138,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
             this.setResult(RESULT_OK, intent);
 
             //この画面を閉じてメイン画面に戻る
+            SensorManager.removeTemperatureEventListener(this);
             finish();
         }
     }

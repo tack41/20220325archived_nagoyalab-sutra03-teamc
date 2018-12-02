@@ -1,15 +1,22 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.NotificationManagerCompat;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+import android.support.v4.app.NotificationCompat;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
@@ -83,6 +90,13 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
         //Display time.
         displayTime();
+
+        //Create Notification Channel
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationChannel channel = new NotificationChannel(getString(R.string.app_name), getString(R.string.app_name), NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setLightColor(Color.YELLOW);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        manager.createNotificationChannel(channel);
     }
 
     /**
@@ -111,7 +125,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     }
 
     /**
-     * Get UI Instance and regist event handler.
+     * Get UI Instance and register event handler.
      */
     private void getUIInstances(){
 
@@ -196,6 +210,15 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             eventLog.setOccurredDate(new java.util.Date());
             _store.insertEvent(eventLog);
 
+            //Post notification on the channel
+            NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationCompat.Builder builder
+                    = new NotificationCompat.Builder(this, getString(R.string.app_name))
+                    .setContentTitle(eventLog.getType().getTitle())
+                    .setContentText(eventLog.getContent())
+                    .setSmallIcon(R.drawable.notification_icon_background);
+            NotificationManagerCompat.from(this).notify(1, builder.build());
+
             SensorManager.fireLighted(false);
         }else if(v == _buttonSimulateSwingEvent){
             EventLog eventLog = new EventLog();
@@ -204,6 +227,15 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             eventLog.setOccurredDate(new java.util.Date());
             _store.insertEvent(eventLog);
 
+            //Post notification on the channel
+            NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationCompat.Builder builder
+                    = new NotificationCompat.Builder(this, getString(R.string.app_name))
+                    .setContentTitle(eventLog.getType().getTitle())
+                    .setContentText(eventLog.getContent())
+                    .setSmallIcon(R.drawable.notification_icon_background);
+            NotificationManagerCompat.from(this).notify(1, builder.build());
+
             SensorManager.fireSwinged(false);
         }else if(v == _buttonSimulateTemperatureEvent){
             EventLog eventLog = new EventLog();
@@ -211,6 +243,15 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             eventLog.setContent("温度異常イベント手動発生");
             eventLog.setOccurredDate(new java.util.Date());
             _store.insertEvent(eventLog);
+
+            //Post notification on the channel
+            NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationCompat.Builder builder
+                    = new NotificationCompat.Builder(this, getString(R.string.app_name))
+                    .setContentTitle(eventLog.getType().getTitle())
+                    .setContentText(eventLog.getContent())
+                    .setSmallIcon(R.drawable.notification_icon_background);
+            NotificationManagerCompat.from(this).notify(1, builder.build());
 
             SensorManager.fireTemperatured(false, 35.0);
         }
@@ -281,6 +322,15 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
             if(eventLog != null){
                 _store.insertEvent(eventLog);
+
+                //Post notification on the channel
+                NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+                NotificationCompat.Builder builder
+                        = new NotificationCompat.Builder(this, getString(R.string.app_name))
+                        .setContentTitle(eventLog.getType().getTitle())
+                        .setContentText(eventLog.getContent())
+                        .setSmallIcon(R.drawable.notification_icon_background);
+                NotificationManagerCompat.from(this).notify(1, builder.build());
 
                 //イベント履歴を再度取得して表示
                 this._eventLogList = _store.getAllEvent();
