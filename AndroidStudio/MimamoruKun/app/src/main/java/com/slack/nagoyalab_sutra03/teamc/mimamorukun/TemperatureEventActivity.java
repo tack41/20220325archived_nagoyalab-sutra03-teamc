@@ -1,10 +1,14 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
@@ -12,7 +16,7 @@ import android.widget.TextView;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
 
@@ -33,6 +37,23 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     private int _soundOK;
     private boolean _loadSoundOKFinished = false;
 
+    SensorService _sensorService;
+    private ServiceConnection _connectionSensorService = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // Serviceとの接続確立時に呼び出される。
+            // service引数には、Onbind()で返却したBinderが渡される
+            _sensorService = ((SensorService.LocalBinder)service).getService();
+
+            //Bind sensor events.
+            _sensorService.addTemperatureEventListener(TemperatureEventActivity.this);
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // Serviceとの切断時に呼び出される。
+            _sensorService = null;
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,8 +65,9 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         //Get UI Instances to handle from code.
         getUIInstances();
 
-        //Bind sensor events.
-        SensorManager.addTemperatureEventListener(this);
+        // Bind SensorService
+        Intent i = new Intent(getBaseContext(), SensorService.class);
+        bindService(i, _connectionSensorService, Context.BIND_AUTO_CREATE);
 
         //Get values from caller activity
         Intent intent = getIntent();
@@ -53,6 +75,12 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
         //Display events.
         displayEvent(_eventLog);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        unbindService(_connectionSensorService);
     }
 
     /**
@@ -117,7 +145,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
             }
 
             //温度異常解消イベントを疑似発生
-            SensorManager.fireTemperatured(true, 28);
+            _sensorService.fireTemperatured(true, 28);
         }
     }
 
@@ -138,7 +166,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
             this.setResult(RESULT_OK, intent);
 
             //この画面を閉じてメイン画面に戻る
-            SensorManager.removeTemperatureEventListener(this);
+            _sensorService.removeTemperatureEventListener(this);
             finish();
         }
     }

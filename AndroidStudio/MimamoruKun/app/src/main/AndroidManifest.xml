@@ -23,6 +23,7 @@
         <activity android:name=".TemperatureEventActivity" />
         <activity android:name=".HandlingRequiredEventActivity"></activity>
         <service android:name="com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService" />
+        <service android:name="com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService" />
     </application>
 
 </manifest>

@@ -26,12 +26,12 @@ import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -64,13 +64,11 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     private boolean _loadFinished = false;
 
     EventLogStoreService _eventLogStoreService;
-    // Serviceとのインターフェースクラス
-    private ServiceConnection mConnection = new ServiceConnection() {
+    private ServiceConnection _connectionEventLogStoreService = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             // Serviceとの接続確立時に呼び出される。
             // service引数には、Onbind()で返却したBinderが渡される
             _eventLogStoreService = ((EventLogStoreService.LocalBinder)service).getService();
-            //必要であればmBoundServiceを使ってバインドしたServiceへの制御を行う
 
             //Get all event history.
             _eventLogList = _eventLogStoreService.getAllEvent();
@@ -85,6 +83,26 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         }
     };
 
+    SensorService _sensorService;
+    private ServiceConnection _connectionSensorService = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // Serviceとの接続確立時に呼び出される。
+            // service引数には、Onbind()で返却したBinderが渡される
+            _sensorService = ((SensorService.LocalBinder)service).getService();
+
+            //Bind sensor events.
+            _sensorService.addLightEventListener(MainActivity.this);
+            _sensorService.addSwingEventListener(MainActivity.this);
+            _sensorService.addTemperatureEventListener(MainActivity.this);
+
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // Serviceとの切断時に呼び出される。
+            _sensorService = null;
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,14 +114,13 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         //Get UI Instances to handle from code.
         getUIInstances();
 
-        //Bind sensor events.
-        SensorManager.addLightEventListener(this);
-        SensorManager.addSwingEventListener(this);
-        SensorManager.addTemperatureEventListener(this);
-
         // Bind EventLogStoreService
-        Intent i = new Intent(getBaseContext(), EventLogStoreService.class);
-        boolean ret = bindService(i, mConnection, Context.BIND_AUTO_CREATE);
+        Intent i1 = new Intent(getBaseContext(), EventLogStoreService.class);
+        bindService(i1, _connectionEventLogStoreService, Context.BIND_AUTO_CREATE);
+
+        // Bind SensorService
+        Intent i2 = new Intent(getBaseContext(), SensorService.class);
+        bindService(i2, _connectionSensorService, Context.BIND_AUTO_CREATE);
 
         //Display time.
         displayTime();
@@ -119,7 +136,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     @Override
     protected void onDestroy(){
         super.onDestroy();
-        unbindService(mConnection);
+        unbindService(_connectionEventLogStoreService);
+        unbindService(_connectionSensorService);
     }
 
     /**
@@ -227,56 +245,11 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
         //各イベント発生を手動で発生
         if(v == _buttonSimulateLightEvent){
-            EventLog eventLog = new EventLog();
-            eventLog.setType(EventLogType.Light);
-            eventLog.setContent("光イベント手動発生");
-            eventLog.setOccurredDate(new java.util.Date());
-            _eventLogStoreService.insertEvent(eventLog);
-
-            //Post notification on the channel
-            NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationCompat.Builder builder
-                    = new NotificationCompat.Builder(this, getString(R.string.app_name))
-                    .setContentTitle(eventLog.getType().getTitle())
-                    .setContentText(eventLog.getContent())
-                    .setSmallIcon(R.drawable.notification_icon_background);
-            NotificationManagerCompat.from(this).notify(1, builder.build());
-
-            SensorManager.fireLighted(false);
+            _sensorService.fireLighted(false);
         }else if(v == _buttonSimulateSwingEvent){
-            EventLog eventLog = new EventLog();
-            eventLog.setType(EventLogType.Swing);
-            eventLog.setContent("振動イベント手動発生");
-            eventLog.setOccurredDate(new java.util.Date());
-            _eventLogStoreService.insertEvent(eventLog);
-
-            //Post notification on the channel
-            NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationCompat.Builder builder
-                    = new NotificationCompat.Builder(this, getString(R.string.app_name))
-                    .setContentTitle(eventLog.getType().getTitle())
-                    .setContentText(eventLog.getContent())
-                    .setSmallIcon(R.drawable.notification_icon_background);
-            NotificationManagerCompat.from(this).notify(1, builder.build());
-
-            SensorManager.fireSwinged(false);
+            _sensorService.fireSwinged(false);
         }else if(v == _buttonSimulateTemperatureEvent){
-            EventLog eventLog = new EventLog();
-            eventLog.setType(EventLogType.TemperatureUnusual);
-            eventLog.setContent("温度異常イベント手動発生");
-            eventLog.setOccurredDate(new java.util.Date());
-            _eventLogStoreService.insertEvent(eventLog);
-
-            //Post notification on the channel
-            NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationCompat.Builder builder
-                    = new NotificationCompat.Builder(this, getString(R.string.app_name))
-                    .setContentTitle(eventLog.getType().getTitle())
-                    .setContentText(eventLog.getContent())
-                    .setSmallIcon(R.drawable.notification_icon_background);
-            NotificationManagerCompat.from(this).notify(1, builder.build());
-
-            SensorManager.fireTemperatured(false, 35.0);
+            _sensorService.fireTemperatured(false, 35.0);
         }
     }
 
@@ -286,15 +259,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     @Override
     public void onLighted(LightEvent e){
         if(!e.isNormal()){
-            //Eventオブジェクトを生成
-            EventLog eventLog = new EventLog();
-            eventLog.setType(EventLogType.Light);
-            eventLog.setContent("端末が光を検知しました");
-            eventLog.setOccurredDate(new java.util.Date());
-
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            EventLogUtility.putEventToIntent(intent, eventLog);
             startActivityForResult(intent, 0);
         }
     }
@@ -305,15 +271,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     @Override
     public void onSwinged(SwingEvent e){
         if(!e.isNormal()){
-            //Eventオブジェクトを生成
-            EventLog eventLog = new EventLog();
-            eventLog.setType(EventLogType.Swing);
-            eventLog.setContent("端末が振動を検知しました");
-            eventLog.setOccurredDate(new java.util.Date());
-
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            EventLogUtility.putEventToIntent(intent, eventLog);
             startActivityForResult(intent, 0);
         }
     }
@@ -324,15 +283,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     @Override
     public void onTemperatureChanged(TemperatureEvent e){
         if(!e.isNormal()){
-            //Eventオブジェクトを生成
-            EventLog eventLog = new EventLog();
-            eventLog.setType(EventLogType.TemperatureUnusual);
-            eventLog.setContent("温度異常を検知しました(" + e.getTemperature() + "℃)");
-            eventLog.setOccurredDate(new java.util.Date());
-
             //イベント対応画面に遷移
             Intent intent = new Intent(this, TemperatureEventActivity.class);
-            EventLogUtility.putEventToIntent(intent, eventLog);
             startActivityForResult(intent, 0);
         }
     }
@@ -340,25 +292,10 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        if(intent != null){
-            EventLog eventLog = EventLogUtility.getEventFromIntent(intent);
 
-            if(eventLog != null){
-                _eventLogStoreService.insertEvent(eventLog);
+        //イベント履歴を再度取得して表示
+        this._eventLogList = _eventLogStoreService.getAllEvent();
+        displayEventHistory();
 
-                //Post notification on the channel
-                NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-                NotificationCompat.Builder builder
-                        = new NotificationCompat.Builder(this, getString(R.string.app_name))
-                        .setContentTitle(eventLog.getType().getTitle())
-                        .setContentText(eventLog.getContent())
-                        .setSmallIcon(R.drawable.notification_icon_background);
-                NotificationManagerCompat.from(this).notify(1, builder.build());
-
-                //イベント履歴を再度取得して表示
-                this._eventLogList = _eventLogStoreService.getAllEvent();
-                displayEventHistory();
-            }
-        }
     }
 }

@@ -1,7 +1,6 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog;
 
 import android.app.Service;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -11,6 +10,9 @@ import android.util.Log;
 import android.content.Intent;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.MyApplication;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +28,6 @@ public class EventLogStoreService extends Service {
 
     private final IBinder _binder = new LocalBinder();
 
-    private Intent _intent;
-
     public class LocalBinder extends Binder {
         public EventLogStoreService getService() {
             return EventLogStoreService.this;
@@ -36,7 +36,6 @@ public class EventLogStoreService extends Service {
 
     public IBinder onBind(Intent intent) {
         _helper = new EventLogSQLiteOpenHelper(MyApplication.getInstance());
-        Context context = MyApplication.getInstance();
         _db = _helper.getWritableDatabase();
 
         return _binder;
@@ -52,13 +51,46 @@ public class EventLogStoreService extends Service {
         return true;
     }
 
-    public int insertEvent(EventLog eventLog){
+    public synchronized int insertEvent(LightEvent event){
         List<EventLog> eventLogList = new ArrayList<>();
+
+        //Create EventLog object from event.
+        EventLog eventLog = new EventLog();
+        eventLog.setType(EventLogType.Light);
+        eventLog.setContent("端末が光を検知しました");
+        eventLog.setOccurredDate(new java.util.Date());
+
         eventLogList.add(eventLog);
         return insertEvent(eventLogList);
     }
 
-    public int insertEvent(List<EventLog> eventLogList){
+    public synchronized int insertEvent(SwingEvent event){
+        List<EventLog> eventLogList = new ArrayList<>();
+
+        //Create EventLog object from event.
+        EventLog eventLog = new EventLog();
+        eventLog.setType(EventLogType.Swing);
+        eventLog.setContent("端末が振動を検知しました");
+        eventLog.setOccurredDate(new java.util.Date());
+
+        eventLogList.add(eventLog);
+        return insertEvent(eventLogList);
+    }
+
+    public synchronized int insertEvent(TemperatureEvent event){
+        List<EventLog> eventLogList = new ArrayList<>();
+
+        //Create EventLog object from event.
+        EventLog eventLog = new EventLog();
+        eventLog.setType(EventLogType.TemperatureUnusual);
+        eventLog.setContent("温度異常を検知しました(" + event.getTemperature() + "℃)");
+        eventLog.setOccurredDate(new java.util.Date());
+
+        eventLogList.add(eventLog);
+        return insertEvent(eventLogList);
+    }
+
+    public synchronized int insertEvent(List<EventLog> eventLogList){
         int retVal = 0;
 
         _db.beginTransaction();
@@ -85,7 +117,7 @@ public class EventLogStoreService extends Service {
         return retVal;
     }
 
-    public List<EventLog> getAllEvent(){
+    public synchronized List<EventLog> getAllEvent(){
         List<EventLog> retVal = new ArrayList<>();
 
         Cursor cursor = _db.rawQuery("SELECT event_type,content,occurred_date FROM events", null);
