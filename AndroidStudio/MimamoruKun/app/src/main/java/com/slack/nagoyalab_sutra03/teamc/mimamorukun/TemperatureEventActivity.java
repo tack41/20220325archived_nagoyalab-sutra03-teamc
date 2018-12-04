@@ -1,20 +1,24 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorManager;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -25,13 +29,29 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     private TextView _textViewOccurredDate;
     private TextView _textViewSimulateTemperatureEventHandledEvent;
 
-    private EventLog _eventLog;
+    private TemperatureEvent _temperatureEvent;
 
     //音源
     private SoundPool _soundPool;
     private int _soundAlert;
     private int _soundOK;
     private boolean _loadSoundOKFinished = false;
+
+    SensorService _sensorService;
+    private ServiceConnection _connectionSensorService = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            _sensorService = ((SensorService.LocalBinder)service).getService();
+
+            //Bind sensor events.
+            _sensorService.addTemperatureEventListener(TemperatureEventActivity.this);
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            _sensorService.removeTemperatureEventListener(TemperatureEventActivity.this);
+
+            _sensorService = null;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,15 +64,22 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         //Get UI Instances to handle from code.
         getUIInstances();
 
-        //Bind sensor events.
-        SensorManager.addTemperatureEventListener(this);
+        // Bind SensorService
+        Intent i = new Intent(getBaseContext(), SensorService.class);
+        bindService(i, _connectionSensorService, Context.BIND_AUTO_CREATE);
 
         //Get values from caller activity
         Intent intent = getIntent();
-        _eventLog = EventLogUtility.getEventFromIntent(intent);
+        _temperatureEvent = EventUtility.getTemperatureEventFromIntent(intent);
 
         //Display events.
-        displayEvent(_eventLog);
+        displayEvent(_temperatureEvent);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        unbindService(_connectionSensorService);
     }
 
     /**
@@ -96,14 +123,10 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         _textViewSimulateTemperatureEventHandledEvent.setOnClickListener(this);
     }
 
-    /**
-     * Dipsplay contents of EventLog instance.
-     * @param eventLog contents to display.
-     */
-    private void displayEvent(EventLog eventLog){
+    private void displayEvent(TemperatureEvent event){
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        _textViewTitle.setText(_eventLog.getType().getTitle());
-        _textViewOccurredDate.setText(sdf.format(_eventLog.getOccurredDate()));
+        _textViewTitle.setText(_temperatureEvent.getMessage());
+        _textViewOccurredDate.setText(sdf.format(_temperatureEvent.getOccurredDate()));
     }
 
     @Override
@@ -117,7 +140,7 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
             }
 
             //温度異常解消イベントを疑似発生
-            SensorManager.fireTemperatured(true, 28);
+            _sensorService.fireTemperatured(true, 28);
         }
     }
 
@@ -126,19 +149,11 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
         //温度異常が解消された場合はメイン画面に戻る
         if(e.isNormal()){
-            //Eventオブジェクトを生成
-            EventLog event_Log_new = new EventLog();
-            event_Log_new.setType(EventLogType.TemperatureBecomeUsual);
-            event_Log_new.setContent("温度が正常(" + e.getTemperature() + "℃)になりました");
-            event_Log_new.setOccurredDate(new java.util.Date());
-
-            //生成したインスタンスをメイン画面に渡す
-            Intent intent = new Intent();
-            EventLogUtility.putEventToIntent(intent, event_Log_new);
-            this.setResult(RESULT_OK, intent);
+            _sensorService.removeTemperatureEventListener(this);
 
             //この画面を閉じてメイン画面に戻る
-            SensorManager.removeTemperatureEventListener(this);
+            Intent intent = new Intent();
+            this.setResult(RESULT_OK, intent);
             finish();
         }
     }
