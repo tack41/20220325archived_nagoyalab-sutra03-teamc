@@ -1,11 +1,14 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -14,8 +17,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -25,13 +31,14 @@ import java.util.Locale;
  */
 public class HandlingRequiredEventActivity extends Activity implements OnClickListener {
 
+    private LightEvent _lightEvent;
+    private SwingEvent _swingEvent;
+
     private LinearLayout _linearLayoutTop;
     private TextView _textViewTitle;
     private TextView _textViewOccurredDate;
     private EditText _editTextComment;
     private Button _buttonOK;
-
-    private EventLog eventLog;
 
     //sound source
     private SoundPool _soundPool;
@@ -42,6 +49,17 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
     private boolean _loadSoundOKFinished;
     private boolean _loadSoundLoopFinished;
 
+    EventLogStoreService _eventLogStoreService;
+    private ServiceConnection _connectionEventLogStoreService = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            _eventLogStoreService = ((EventLogStoreService.LocalBinder)service).getService();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            _eventLogStoreService = null;
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,15 +68,20 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         //Get UI Instances to handle from code.
         getUIInstances();
 
-        //親画面から値を取得
+        //get Event instance from intent
         Intent intent = getIntent();
-        eventLog = EventLogUtility.getEventFromIntent(intent);
+        _lightEvent = EventUtility.getLightEventFromIntent(intent);
+        _swingEvent = EventUtility.getSwingEventFromIntent(intent);
 
         //Load sound source.
-        loadAndPlaySound(eventLog);
+        loadAndPlaySound(_lightEvent != null);
 
-        //取得した値を表示
-        displayEvent(eventLog);
+        //display Event value
+        if(_lightEvent != null) {
+            displayEvent(_lightEvent);
+        }else {
+            displayEvent(_swingEvent);
+        }
     }
 
     /**
@@ -73,7 +96,11 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         _buttonOK.setOnClickListener(this);
     }
 
-    private void loadAndPlaySound(EventLog eventLog){
+    /**
+     *
+     * @param isLight whether event is "Light"(not "Swing")
+     */
+    private void loadAndPlaySound(boolean isLight){
 
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
@@ -90,7 +117,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         _soundOK = _soundPool.load(this,R.raw.decision3,1);
 
         // Play warning sound continuously after load sound source.
-        _soundLoop = (eventLog.getType() == EventLogType.Swing ? _soundSwing : _soundLight);
+        _soundLoop = (isLight ? _soundSwing : _soundLight);
         _soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
             @Override
             public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
@@ -106,30 +133,26 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         });
     }
 
-    /**
-     * Dipsplay contents of EventLog instance.
-     * @param eventLog contents to display.
-     */
-    private void displayEvent(EventLog eventLog){
-        //イベントの種類に応じて背景色を変える
-        switch(eventLog.getType()){
-            case Light:
-                _linearLayoutTop.setBackgroundColor(Color.parseColor("#66cdaa"));
-                break;
-            case Swing:
-                _linearLayoutTop.setBackgroundColor(Color.parseColor("#ffff00"));
-                break;
-        }
+    private void displayEvent(LightEvent event){
+        _linearLayoutTop.setBackgroundColor(Color.parseColor("#66cdaa"));
 
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
-        _textViewTitle.setText(eventLog.getType().getTitle());
-        _textViewOccurredDate.setText(sdf.format(eventLog.getOccurredDate()));
+        _textViewTitle.setText(event.getMessage());
+        _textViewOccurredDate.setText(sdf.format(event.getOccurredDate()));
+    }
+
+    private void displayEvent(SwingEvent event){
+        _linearLayoutTop.setBackgroundColor(Color.parseColor("#ffff00"));
+
+        java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 E曜日 H時mm分",new Locale("ja", "JP", "JP"));
+        _textViewTitle.setText(event.getMessage());
+        _textViewOccurredDate.setText(sdf.format(event.getOccurredDate()));
     }
 
     @Override
     public void onClick(View v) {
 
-        if(v== _buttonOK){
+        if(v == _buttonOK){
             if(_loadSoundLoopFinished){
                 //Stop continuous warning sound.
                 _soundPool.stop(_soundLoop);
@@ -139,29 +162,21 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
                 _soundPool.play(_soundOK, 1.0f, 1.0f, 0, 0, 1);
             }
 
-            //対応完了イベントのインスタンスを生成
-            EventLog event_Log_new = new EventLog();
+            //対応完了イベントをログに記録
+            EventLog eventLog = new EventLog();
 
-            switch(eventLog.getType()){
-                case Swing:
-                    event_Log_new.setType(EventLogType.SwingHandled);
-                    break;
-                case Light:
-                    event_Log_new.setType(EventLogType.LightHandled);
-                    break;
-                default:
-                    event_Log_new.setType(EventLogType.Unknown);
-                    break;
+            if(_lightEvent != null) {
+                eventLog.setType(EventLogType.SwingHandled);
+            }else{
+                eventLog.setType(EventLogType.LightHandled);
             }
-            event_Log_new.setOccurredDate(new java.util.Date());
-            event_Log_new.setContent("対応コメント:" + _editTextComment.getText().toString());
+            eventLog.setOccurredDate(new java.util.Date());
+            eventLog.setContent("対応コメント:" + _editTextComment.getText().toString());
 
-            //生成したインスタンスをメイン画面に渡す
+
+            //Return to MainActivity.
             Intent intent = new Intent();
-            EventLogUtility.putEventToIntent(intent, event_Log_new);
             this.setResult(RESULT_OK, intent);
-
-            //この画面を閉じてメイン画面に戻る
             finish();
         }
     }

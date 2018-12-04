@@ -1,25 +1,35 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor;
 
+import java.util.Date;
+
 public class TemperatureEvent {
 
     //正常かどうか(True: 温度異常が検知されなくなった, False: 温度異常が検知された)
-    private boolean is_normal;
+    private boolean _normal;
     public boolean isNormal(){
-        return this.is_normal;
+        return _normal;
     }
 
-    private double temperature;
+    //発生日時
+    Date _occurredDate;
+    public Date getOccurredDate(){
+        return _occurredDate;
+    }
+
+    private double _temperature;
     public double getTemperature(){
-        return this.temperature;
-    }
-    private String message;
-    public String getMessage(){
-        return this.message;
+        return _temperature;
     }
 
-    public TemperatureEvent(boolean isNormal, double temperature, String message){
-        this.is_normal = isNormal;
-        this.temperature = temperature;
-        this.message = message;
+    private String _message;
+    public String getMessage(){
+        return _message;
+    }
+
+    public TemperatureEvent(boolean normal, Date occurredDate, double temperature, String message){
+        _normal = normal;
+        _occurredDate = occurredDate;
+        _temperature = temperature;
+        _message = message;
     }
 }

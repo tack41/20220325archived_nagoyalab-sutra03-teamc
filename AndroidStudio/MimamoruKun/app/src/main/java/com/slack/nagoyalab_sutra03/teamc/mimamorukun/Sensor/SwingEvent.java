@@ -1,20 +1,29 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor;
 
+import java.util.Date;
+
 public class SwingEvent {
 
     //正常かどうか(True: 振動が検知されなくなった, False: 振動が検知された)
-    private boolean is_normal;
+    private boolean _normal;
     public boolean isNormal(){
-        return this.is_normal;
+        return _normal;
     }
 
-    private String message;
+    //発生日時
+    Date _occurredDate;
+    public Date getOccurredDate(){
+        return _occurredDate;
+    }
+
+    private String _message;
     public String getMessage(){
-        return this.message;
+        return _message;
     }
 
-    public SwingEvent(boolean isNormal, String message){
-        this.is_normal = isNormal;
-        this.message = message;
+    public SwingEvent(boolean normal, Date occurredDate, String message){
+        _normal = normal;
+        _occurredDate = occurredDate;
+        _message = message;
     }
 }

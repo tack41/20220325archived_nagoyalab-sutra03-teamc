@@ -11,19 +11,16 @@ import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.NotificationManagerCompat;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
-import android.support.v4.app.NotificationCompat;
 import android.content.ServiceConnection;
 import android.content.ComponentName;
 import android.os.IBinder;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
@@ -31,6 +28,7 @@ import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 
 import java.text.DateFormat;
@@ -66,8 +64,6 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     EventLogStoreService _eventLogStoreService;
     private ServiceConnection _connectionEventLogStoreService = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-            // Serviceとの接続確立時に呼び出される。
-            // service引数には、Onbind()で返却したBinderが渡される
             _eventLogStoreService = ((EventLogStoreService.LocalBinder)service).getService();
 
             //Get all event history.
@@ -78,7 +74,6 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            // Serviceとの切断時に呼び出される。
             _eventLogStoreService = null;
         }
     };
@@ -86,19 +81,20 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     SensorService _sensorService;
     private ServiceConnection _connectionSensorService = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-            // Serviceとの接続確立時に呼び出される。
-            // service引数には、Onbind()で返却したBinderが渡される
             _sensorService = ((SensorService.LocalBinder)service).getService();
 
             //Bind sensor events.
             _sensorService.addLightEventListener(MainActivity.this);
             _sensorService.addSwingEventListener(MainActivity.this);
             _sensorService.addTemperatureEventListener(MainActivity.this);
-
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            // Serviceとの切断時に呼び出される。
+            //Unbind sensor events.
+            _sensorService.removeLightEventListener(MainActivity.this);
+            _sensorService.removeSwingEventListener(MainActivity.this);
+            _sensorService.removeTemperatureEventListener(MainActivity.this);
+
             _sensorService = null;
         }
     };
@@ -261,6 +257,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         if(!e.isNormal()){
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+            EventUtility.putEventToIntent(intent, e);
             startActivityForResult(intent, 0);
         }
     }
@@ -273,6 +270,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         if(!e.isNormal()){
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+            EventUtility.putEventToIntent(intent, e);
             startActivityForResult(intent, 0);
         }
     }
@@ -285,6 +283,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         if(!e.isNormal()){
             //イベント対応画面に遷移
             Intent intent = new Intent(this, TemperatureEventActivity.class);
+            EventUtility.putEventToIntent(intent, e);
             startActivityForResult(intent, 0);
         }
     }
