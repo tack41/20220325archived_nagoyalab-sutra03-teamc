@@ -2,6 +2,7 @@ package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
@@ -24,6 +25,7 @@ import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Locale;
 
 /*
@@ -68,6 +70,10 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         //Get UI Instances to handle from code.
         getUIInstances();
 
+        // Bind EventLogStoreService
+        Intent i1 = new Intent(getBaseContext(), EventLogStoreService.class);
+        bindService(i1, _connectionEventLogStoreService, Context.BIND_AUTO_CREATE);
+
         //get Event instance from intent
         Intent intent = getIntent();
         _lightEvent = EventUtility.getLightEventFromIntent(intent);
@@ -82,6 +88,14 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         }else {
             displayEvent(_swingEvent);
         }
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+
+        unloadSound(_lightEvent != null);
+        unbindService(_connectionEventLogStoreService);
     }
 
     /**
@@ -133,6 +147,29 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
         });
     }
 
+    /**
+     *
+     * @param isLight whether event is "Light"(not "Swing")
+     */
+    private void unloadSound(boolean isLight){
+
+        try{
+            _soundPool.unload(_soundLight);
+        }catch(Exception e){
+        }
+        try{
+            _soundPool.unload(_soundSwing);
+        }catch(Exception e) {
+        }
+        try{
+            _soundPool.unload(_soundOK);
+        }catch(Exception e){
+        }
+
+        _soundPool.release();
+    }
+
+
     private void displayEvent(LightEvent event){
         _linearLayoutTop.setBackgroundColor(Color.parseColor("#66cdaa"));
 
@@ -172,7 +209,7 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
             }
             eventLog.setOccurredDate(new java.util.Date());
             eventLog.setContent("対応コメント:" + _editTextComment.getText().toString());
-
+            _eventLogStoreService.insertEventLog(eventLog);
 
             //Return to MainActivity.
             Intent intent = new Intent();

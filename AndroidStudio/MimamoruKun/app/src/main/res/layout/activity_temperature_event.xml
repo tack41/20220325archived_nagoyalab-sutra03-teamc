@@ -41,14 +41,26 @@
             android:layout_weight="1"
             android:textSize="10pt"
             android:text="温度を10℃～30℃にしてください。異常解消を検知したら自動的に元に戻ります。" />
-        <TextView
-            android:id="@+id/textview_simulate_temperature_event_handled_event"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="3"
-            android:textSize="10pt"
-            android:background="#ff00ff"
-            android:text="(ここをタップすると異常解消イベントをシミュレートします)" />
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textSize="20pt"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="現在の温度:" />
+            <TextView
+                android:id="@+id/textview_temperature"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="20pt"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="99.9℃" />
+
+        </LinearLayout>
 
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>

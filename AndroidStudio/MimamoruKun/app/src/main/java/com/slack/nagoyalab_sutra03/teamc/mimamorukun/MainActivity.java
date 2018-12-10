@@ -4,32 +4,34 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Handler;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
-import android.content.ServiceConnection;
-import android.content.ComponentName;
-import android.os.IBinder;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEventListener;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -40,21 +42,28 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends Activity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener {
+public class MainActivity extends Activity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
 
+    //TextView to display current time.
     private TextView _textView_time;
+
+    private TextView _textView_temperature;
+
+    //TextViews to display latest event history.
     private List<TextView> _textViewList;
 
     //Buttons to simulate each events.
     private Button _buttonSimulateLightEvent;
     private Button _buttonSimulateSwingEvent;
-    private Button _buttonSimulateTemperatureEvent;
 
     //List of EventLog instance to display.
     private List<EventLog> _eventLogList;
 
-    //This class level accessible _handler required to get UI thread in timer event _handler.
+    //Handler to get UI thread.
     private Handler _handler = new Handler();
+
+    //This class level accessible _handler required to get UI thread in timer event _handler.
+//    private Handler _handler = new Handler();
 
     //sound source
     private SoundPool _soundPool;
@@ -71,6 +80,9 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
             //Display events.
             displayEventHistory();
+
+            //Display temperature
+            displayTemperature();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -87,6 +99,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             _sensorService.addLightEventListener(MainActivity.this);
             _sensorService.addSwingEventListener(MainActivity.this);
             _sensorService.addTemperatureEventListener(MainActivity.this);
+            _sensorService.addMeasuredEventListener(MainActivity.this);
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -94,6 +107,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             _sensorService.removeLightEventListener(MainActivity.this);
             _sensorService.removeSwingEventListener(MainActivity.this);
             _sensorService.removeTemperatureEventListener(MainActivity.this);
+            _sensorService.removeMeasuredEventListner(MainActivity.this);
 
             _sensorService = null;
         }
@@ -168,6 +182,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
 
         _textView_time = findViewById(R.id.textview_time);
 
+        _textView_temperature = findViewById(R.id.textview_temperature);
+
         _textViewList = new ArrayList<>();
         _textViewList.add((TextView)findViewById(R.id.text_history1));
         _textViewList.add((TextView)findViewById(R.id.text_history2));
@@ -184,8 +200,6 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         _buttonSimulateLightEvent.setOnClickListener(this);
         _buttonSimulateSwingEvent = findViewById(R.id.button_simulate_swing_event);
         _buttonSimulateSwingEvent.setOnClickListener(this);
-        _buttonSimulateTemperatureEvent = findViewById(R.id.button_simulate_temperature_event);
-        _buttonSimulateTemperatureEvent.setOnClickListener(this);
     }
 
     /**
@@ -220,6 +234,12 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
                 });
             }
         }, 0, 1000); //update time per 1000ms(=1s)
+
+   }
+
+   public void displayTemperature(){
+        if(_sensorService != null)
+       _textView_temperature.setText(String.format("%.1f℃", _sensorService.getTemperature()));
    }
 
     @Override
@@ -244,8 +264,6 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             _sensorService.fireLighted(false);
         }else if(v == _buttonSimulateSwingEvent){
             _sensorService.fireSwinged(false);
-        }else if(v == _buttonSimulateTemperatureEvent){
-            _sensorService.fireTemperatured(false, 35.0);
         }
     }
 
@@ -286,6 +304,17 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             EventUtility.putEventToIntent(intent, e);
             startActivityForResult(intent, 0);
         }
+    }
+
+    @Override
+    public void onMeasured(MeasuredEvent e){
+        //Update temperature on UI thread.
+        _handler.post(new Runnable() {
+            @Override
+            public void run() {
+                displayTemperature();
+            }
+        });
     }
 
     @Override

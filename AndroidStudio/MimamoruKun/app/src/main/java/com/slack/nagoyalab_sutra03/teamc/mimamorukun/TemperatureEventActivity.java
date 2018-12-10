@@ -8,13 +8,12 @@ import android.content.ServiceConnection;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.TextView;
 
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEvent;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
@@ -23,11 +22,13 @@ import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-public class TemperatureEventActivity extends Activity implements OnClickListener, TemperatureEventListener {
+public class TemperatureEventActivity extends Activity implements TemperatureEventListener, MeasuredEventListener {
+
+    private Handler _handler = new Handler();
 
     private TextView _textViewTitle;
     private TextView _textViewOccurredDate;
-    private TextView _textViewSimulateTemperatureEventHandledEvent;
+    private TextView _textViewTemperature;
 
     private TemperatureEvent _temperatureEvent;
 
@@ -44,10 +45,12 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
             //Bind sensor events.
             _sensorService.addTemperatureEventListener(TemperatureEventActivity.this);
+            _sensorService.addMeasuredEventListener(TemperatureEventActivity.this);
         }
 
         public void onServiceDisconnected(ComponentName className) {
             _sensorService.removeTemperatureEventListener(TemperatureEventActivity.this);
+            _sensorService.removeMeasuredEventListner(TemperatureEventActivity.this);
 
             _sensorService = null;
         }
@@ -74,11 +77,16 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
 
         //Display events.
         displayEvent(_temperatureEvent);
+
+        //Display temperature.
+        displayTemperature(_temperatureEvent.getTemperature());
     }
 
     @Override
     protected void onDestroy(){
         super.onDestroy();
+
+        unloadSound();
         unbindService(_connectionSensorService);
     }
 
@@ -114,13 +122,23 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
     }
 
     /**
+     * Unload sound.
+     */
+    private void unloadSound() {
+
+        if(_loadSoundOKFinished){
+            _soundPool.unload(_soundAlert);
+        }
+        _soundPool.release();
+    }
+
+    /**
      * Get UI Instance and regist event handler.
      */
     private void getUIInstances() {
         _textViewTitle = findViewById(R.id.textview_title);
         _textViewOccurredDate = findViewById(R.id.textview_occured_date);
-        _textViewSimulateTemperatureEventHandledEvent = findViewById(R.id.textview_simulate_temperature_event_handled_event);
-        _textViewSimulateTemperatureEventHandledEvent.setOnClickListener(this);
+        _textViewTemperature = findViewById(R.id.textview_temperature);
     }
 
     private void displayEvent(TemperatureEvent event){
@@ -129,21 +147,10 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
         _textViewOccurredDate.setText(sdf.format(_temperatureEvent.getOccurredDate()));
     }
 
-    @Override
-    public void onClick(View v) {
-        if(v== _textViewSimulateTemperatureEventHandledEvent){
-            //Stop continuous warning sound.
-            _soundPool.stop(_soundAlert);
-            if(_loadSoundOKFinished){
-                //Play sound effect of tapping button
-                _soundPool.play(_soundOK, 1.0f, 1.0f, 0, 0, 1);
-            }
+    private void displayTemperature(double temperature){
+        _textViewTemperature.setText(String.format("%.1f℃",temperature));
 
-            //温度異常解消イベントを疑似発生
-            _sensorService.fireTemperatured(true, 28);
-        }
     }
-
     @Override
     public void onTemperatureChanged(TemperatureEvent e){
 
@@ -156,5 +163,16 @@ public class TemperatureEventActivity extends Activity implements OnClickListene
             this.setResult(RESULT_OK, intent);
             finish();
         }
+    }
+
+    @Override
+    public void onMeasured(MeasuredEvent e){
+        //Update temperature on UI thread.
+        _handler.post(new Runnable() {
+            @Override
+            public void run() {
+                displayTemperature(_sensorService.getTemperature());
+            }
+        });
     }
 }

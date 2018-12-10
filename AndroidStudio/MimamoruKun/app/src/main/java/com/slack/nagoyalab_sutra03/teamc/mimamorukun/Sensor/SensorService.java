@@ -33,18 +33,15 @@ public class SensorService extends Service {
     }
 
     //Interval to get sensor values(seconds)
-    private int _interval = 30;
+    private int _interval = 10;
     public int getInterval(){ return _interval;}
     public void setInterval(int interval){
         _interval = interval;
+        stopTimer();
         startTimer();
     }
 
     private void startTimer(){
-        if(_timer != null){
-            _timer.cancel();
-            _timer = null;
-        }
         _timer = new Timer(true);
         _timer.schedule(new TimerTask() {
             @Override
@@ -54,12 +51,19 @@ public class SensorService extends Service {
         }, 0, _interval*1000);
     }
 
+    public void stopTimer(){
+        if(_timer != null){
+            _timer.cancel();
+            _timer = null;
+        }
+    }
+
     //Sensor values
     private double _temperature = 20;
     public double getTemperature(){return _temperature;}
     // and more ....
 
-    //Threashold
+    //Threshold
     private double _temperatureMin = 10.0;
     public double getTemperatureMin(){ return _temperatureMin; }
     private double _temperatureMax = 30.0;
@@ -114,6 +118,7 @@ public class SensorService extends Service {
         bindService(i, mConnection, Context.BIND_AUTO_CREATE);
 
         // Start measuring
+        stopTimer();
         startTimer();
 
         return _binder;
@@ -129,6 +134,9 @@ public class SensorService extends Service {
 
         // Unbind EventLogStoreService
         unbindService(mConnection);
+
+        // Stop measuring
+        stopTimer();
 
         return true;
     }
@@ -171,6 +179,7 @@ public class SensorService extends Service {
     private void measure(){
         //Get value from sensor
         // _temperature = sensor.getTemperature();
+        _temperature = 25 + 7*Math.random();
 
         //計測終了イベント発生
         fireMeasured(_temperature);
@@ -196,6 +205,11 @@ public class SensorService extends Service {
         if(!_lastTemperatureNormal && isTemperatureNormal()){
             fireTemperatured(true, _temperature);
         }
+
+        //前回の状態を更新
+        _lastLightNormal = isLightNormal();
+        _lastSwingNormal = isSwingNormal();
+        _lastTemperatureNormal = isTemperatureNormal();
     }
 
     // 以下、各イベントを手動発生させる。
@@ -208,7 +222,7 @@ public class SensorService extends Service {
                 isNormal ? "光が閾値以下となったことを検知" : "光が閾値以上となったことを検知");
 
         //Save EventLog
-        _eventLogStoreService.insertEvent(event);
+        _eventLogStoreService.saveEvent(event);
 
         //Post notification
         NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -232,7 +246,7 @@ public class SensorService extends Service {
                 isNormal ? "振動が閾値以下となったことを検知" : "振動が閾値以上となったことを検知");
 
         //Save EventLog
-        _eventLogStoreService.insertEvent(event);
+        _eventLogStoreService.saveEvent(event);
 
         //Post notification
         NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -258,7 +272,7 @@ public class SensorService extends Service {
 
         //Save EventLog
         if(_eventLogStoreService != null){
-            _eventLogStoreService.insertEvent(event);
+            _eventLogStoreService.saveEvent(event);
         }
 
         //Post notification

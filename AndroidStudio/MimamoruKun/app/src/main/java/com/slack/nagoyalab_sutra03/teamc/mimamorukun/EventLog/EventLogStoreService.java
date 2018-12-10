@@ -51,61 +51,49 @@ public class EventLogStoreService extends Service {
         return true;
     }
 
-    public synchronized int insertEvent(LightEvent event){
-        List<EventLog> eventLogList = new ArrayList<>();
-
+    public synchronized int saveEvent(LightEvent event){
         //Create EventLog object from event.
         EventLog eventLog = new EventLog();
         eventLog.setType(EventLogType.Light);
         eventLog.setContent("端末が光を検知しました");
         eventLog.setOccurredDate(new java.util.Date());
 
-        eventLogList.add(eventLog);
-        return insertEvent(eventLogList);
+        return insertEventLog(eventLog);
     }
 
-    public synchronized int insertEvent(SwingEvent event){
-        List<EventLog> eventLogList = new ArrayList<>();
-
+    public synchronized int saveEvent(SwingEvent event){
         //Create EventLog object from event.
         EventLog eventLog = new EventLog();
         eventLog.setType(EventLogType.Swing);
         eventLog.setContent("端末が振動を検知しました");
         eventLog.setOccurredDate(new java.util.Date());
 
-        eventLogList.add(eventLog);
-        return insertEvent(eventLogList);
+        return insertEventLog(eventLog);
     }
 
-    public synchronized int insertEvent(TemperatureEvent event){
-        List<EventLog> eventLogList = new ArrayList<>();
-
+    public synchronized int saveEvent(TemperatureEvent event){
         //Create EventLog object from event.
         EventLog eventLog = new EventLog();
         eventLog.setType(EventLogType.TemperatureUnusual);
         eventLog.setContent("温度異常を検知しました(" + event.getTemperature() + "℃)");
         eventLog.setOccurredDate(new java.util.Date());
 
-        eventLogList.add(eventLog);
-        return insertEvent(eventLogList);
+        return insertEventLog(eventLog);
     }
 
-    public synchronized int insertEvent(List<EventLog> eventLogList){
+    public synchronized int insertEventLog(EventLog eventLog){
         int retVal = 0;
 
         _db.beginTransaction();
         try{
             final SQLiteStatement statement = _db.compileStatement("INSERT INTO events (event_type, content, occurred_date)VALUES (?, ?, ?)");
             try{
-                for(int i = 0; i< eventLogList.size(); i++){
-                    EventLog eventLog = eventLogList.get(i);
-                    statement.bindString(1, eventLog.getType().toValue());
-                    statement.bindString(2, eventLog.getContent());
-                    statement.bindLong(3, eventLog.occurredDate.getTime());
+                statement.bindString(1, eventLog.getType().toValue());
+                statement.bindString(2, eventLog.getContent());
+                statement.bindLong(3, eventLog.occurredDate.getTime());
 
-                    //戻り値が0以上(row id)ならば成功
-                    if(0 <= statement.executeInsert()) retVal++;
-                }
+                //戻り値が0以上(row id)ならば成功
+                if(0 <= statement.executeInsert()) retVal++;
             }finally {
                 statement.close();
             }

@@ -64,7 +64,7 @@ public class EventUtility {
         intent.putExtra(_INTENT_KEY_TEMPERATUREEVENT_NORMAL, event.isNormal());
         intent.putExtra(_INTENT_KEY_TEMPERATUREEVENT_OCCURRED_DATE, event.getOccurredDate().getTime());
         intent.putExtra(_INTENT_KEY_TEMPERATUREEVENT_TEMPERATURE, event.getTemperature());
-        intent.putExtra(_INTENT_KEY_LIGHTEVENT_MESSAGE, event.getMessage());
+        intent.putExtra(_INTENT_KEY_TEMPERATUREEVENT_MESSAGE, event.getMessage());
     }
 
     public static LightEvent getLightEventFromIntent(Intent intent){
