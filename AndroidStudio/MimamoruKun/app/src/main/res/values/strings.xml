@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">自宅介護みまもりくん</string>
+    <string name="menu_settings">設定</string>
+    <string name="menu_help">使い方</string>
 </resources>

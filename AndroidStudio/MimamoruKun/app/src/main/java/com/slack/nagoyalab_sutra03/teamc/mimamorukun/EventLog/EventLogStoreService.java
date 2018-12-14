@@ -90,7 +90,7 @@ public class EventLogStoreService extends Service {
             try{
                 statement.bindString(1, eventLog.getType().toValue());
                 statement.bindString(2, eventLog.getContent());
-                statement.bindLong(3, eventLog.occurredDate.getTime());
+                statement.bindLong(3, eventLog.getOccurredDate().getTime());
 
                 //戻り値が0以上(row id)ならば成功
                 if(0 <= statement.executeInsert()) retVal++;

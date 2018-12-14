@@ -1,6 +1,6 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
-import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -18,11 +18,14 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
+
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEvent;
@@ -42,7 +45,7 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends Activity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
+public class MainActivity extends AppCompatActivity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
 
     //TextView to display current time.
     private TextView _textView_time;
@@ -70,6 +73,8 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     private int _soundTapButtonOrEvent;
     private boolean _loadFinished = false;
 
+    Setting _setting;
+
     EventLogStoreService _eventLogStoreService;
     private ServiceConnection _connectionEventLogStoreService = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
@@ -95,6 +100,11 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         public void onServiceConnected(ComponentName className, IBinder service) {
             _sensorService = ((SensorService.LocalBinder)service).getService();
 
+            //Set initinal settings.
+            _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
+            _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
+            _sensorService.setInterval(_setting.getMeasurementInterval());
+
             //Bind sensor events.
             _sensorService.addLightEventListener(MainActivity.this);
             _sensorService.addSwingEventListener(MainActivity.this);
@@ -114,9 +124,40 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     };
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //main.xmlの内容を読み込む
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+
+    // オプションメニューのアイテムが選択されたときに呼び出されるメソッド
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menuitem_settings:
+                Intent intent = new Intent(this, SettingActivity.class);
+                _setting.putToIntent(intent);
+                startActivityForResult(intent, 0);
+                return true;
+            case R.id.menuitem_help:
+                new AlertDialog.Builder(this)
+                        .setTitle("使い方")
+                        .setMessage("まだ実装してません")
+                        .setPositiveButton("OK", null)
+                        .show();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Load setting
+        _setting = Setting.load();
 
         //Load sound source
         loadSound();
@@ -146,6 +187,9 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     @Override
     protected void onDestroy(){
         super.onDestroy();
+
+        _setting.save();
+
         unbindService(_connectionEventLogStoreService);
         unbindService(_connectionSensorService);
     }
@@ -254,7 +298,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
             if(v == _textViewList.get(i)){
                 EventLog eventLog = _eventLogList.get(_eventLogList.size()-i-1);
                 Intent intent = new Intent(this, EventLogDetailActivity.class);
-                EventLogUtility.putEventToIntent(intent, eventLog);
+                eventLog.putToIntent(intent);
                 startActivityForResult(intent, 0);
             }
         }
@@ -268,27 +312,29 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     }
 
     /*
-      光イベント検知時のEventHandlerの仮実装
+      光イベント検知時
      */
     @Override
     public void onLighted(LightEvent e){
         if(!e.isNormal()){
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            EventUtility.putEventToIntent(intent, e);
+            e.putToIntent(intent);
+            _setting.putToIntent(intent);
             startActivityForResult(intent, 0);
         }
     }
 
     /*
-      振動イベント検知時のEventHandlerの仮実装
+      振動イベント検知時
      */
     @Override
     public void onSwinged(SwingEvent e){
         if(!e.isNormal()){
             //イベント対応画面に遷移
             Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            EventUtility.putEventToIntent(intent, e);
+            e.putToIntent(intent);
+            _setting.putToIntent(intent);
             startActivityForResult(intent, 0);
         }
     }
@@ -301,7 +347,7 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         if(!e.isNormal()){
             //イベント対応画面に遷移
             Intent intent = new Intent(this, TemperatureEventActivity.class);
-            EventUtility.putEventToIntent(intent, e);
+            e.putToIntent(intent);
             startActivityForResult(intent, 0);
         }
     }
@@ -321,9 +367,16 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
+        //設定画面で値を変更した場合は、その内容を反映する
+        if(intent != null && Setting.getFromIntent(intent) != null){
+            _setting = Setting.getFromIntent(intent);
+            _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
+            _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
+            _sensorService.setInterval(_setting.getMeasurementInterval());
+        }
+
         //イベント履歴を再度取得して表示
         this._eventLogList = _eventLogStoreService.getAllEvent();
         displayEventHistory();
-
     }
 }

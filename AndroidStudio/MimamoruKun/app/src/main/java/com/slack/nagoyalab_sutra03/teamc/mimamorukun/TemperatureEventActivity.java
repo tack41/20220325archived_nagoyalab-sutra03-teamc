@@ -17,7 +17,6 @@ import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEventListene
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -73,7 +72,7 @@ public class TemperatureEventActivity extends Activity implements TemperatureEve
 
         //Get values from caller activity
         Intent intent = getIntent();
-        _temperatureEvent = EventUtility.getTemperatureEventFromIntent(intent);
+        _temperatureEvent = TemperatureEvent.getFromIntent(intent);
 
         //Display events.
         displayEvent(_temperatureEvent);

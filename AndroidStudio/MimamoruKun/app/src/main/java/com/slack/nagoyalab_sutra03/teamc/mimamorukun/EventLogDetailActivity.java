@@ -11,7 +11,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogUtility;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -44,7 +43,7 @@ public class EventLogDetailActivity extends Activity implements OnClickListener 
 
         //Get values from caller activity
         Intent intent = getIntent();
-        _eventLog = EventLogUtility.getEventFromIntent(intent);
+        _eventLog = EventLog.getFromIntent(intent);
 
         //Display events.
         displayEvent(_eventLog);

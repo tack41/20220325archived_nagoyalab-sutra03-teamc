@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 
 public class SensorService extends Service {
-    private final static String TAB = "SensorService";
     private final IBinder _binder = new SensorService.LocalBinder();
 
     public class LocalBinder extends Binder {
@@ -42,6 +41,9 @@ public class SensorService extends Service {
     }
 
     private void startTimer(){
+        //Initial measuring
+        measure();
+
         _timer = new Timer(true);
         _timer.schedule(new TimerTask() {
             @Override
@@ -59,16 +61,17 @@ public class SensorService extends Service {
     }
 
     //Sensor values
-    private double _temperature = 20;
-    public double getTemperature(){return _temperature;}
+    private float _temperature = 20;
+    public float getTemperature(){return _temperature;}
     // and more ....
 
     //Threshold
-    private double _temperatureMin = 10.0;
-    public double getTemperatureMin(){ return _temperatureMin; }
-    private double _temperatureMax = 30.0;
-    public double getTemperatureMax() { return _temperatureMax; }
-    // and more ....
+    private float _temperatureLowerLimit = 10.0f;
+    public float getTemperatureMin(){ return _temperatureLowerLimit; }
+    public void setTemperatureLowerLimit(float temperatureLowerLimit){_temperatureLowerLimit = temperatureLowerLimit;}
+    private float _temperatureUpperLimit = 30.0f;
+    public float getTemperatureMax() { return _temperatureUpperLimit; }
+    public void setTemperatureUpperLimit(float temperatureUpperLimit){_temperatureUpperLimit = temperatureUpperLimit;}
 
     //前回計測値が正常範囲かどうか
     private boolean _lastLightNormal = true;
@@ -85,7 +88,7 @@ public class SensorService extends Service {
         return true;
     }
     private boolean isTemperatureNormal(){
-        return _temperatureMin <= _temperature && _temperature <= _temperatureMax;
+        return _temperatureLowerLimit <= _temperature && _temperature <= _temperatureUpperLimit;
     }
 
     private List<LightEventListener> _lightEventList = new ArrayList<>();
@@ -126,8 +129,6 @@ public class SensorService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.i(TAB,"onUnbind");
-
         _lightEventList.clear();
         _swingEventList.clear();
         _temperatureEventList.clear();
@@ -179,7 +180,7 @@ public class SensorService extends Service {
     private void measure(){
         //Get value from sensor
         // _temperature = sensor.getTemperature();
-        _temperature = 25 + 7*Math.random();
+        _temperature = (float)(25 + 7*Math.random());
 
         //計測終了イベント発生
         fireMeasured(_temperature);
@@ -264,7 +265,7 @@ public class SensorService extends Service {
     }
 
     // 温度イベント
-    public void fireTemperatured(boolean isNormal, double temperature) {
+    public void fireTemperatured(boolean isNormal, float temperature) {
         //Create Event object
         TemperatureEvent event = new TemperatureEvent(isNormal, new Date(),
                 temperature,

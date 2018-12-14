@@ -20,12 +20,10 @@ import android.widget.TextView;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.EventUtility;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Locale;
 
 /*
@@ -50,6 +48,8 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
     private int _soundLoop;
     private boolean _loadSoundOKFinished;
     private boolean _loadSoundLoopFinished;
+
+    private Setting _setting;
 
     EventLogStoreService _eventLogStoreService;
     private ServiceConnection _connectionEventLogStoreService = new ServiceConnection() {
@@ -76,8 +76,10 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
 
         //get Event instance from intent
         Intent intent = getIntent();
-        _lightEvent = EventUtility.getLightEventFromIntent(intent);
-        _swingEvent = EventUtility.getSwingEventFromIntent(intent);
+        _lightEvent = LightEvent.getFromIntent(intent);
+        _swingEvent = SwingEvent.getFromIntent(intent);
+
+        _setting = Setting.getFromIntent(intent);
 
         //Load sound source.
         loadAndPlaySound(_lightEvent != null);
@@ -208,7 +210,15 @@ public class HandlingRequiredEventActivity extends Activity implements OnClickLi
                 eventLog.setType(EventLogType.LightHandled);
             }
             eventLog.setOccurredDate(new java.util.Date());
-            eventLog.setContent("対応コメント:" + _editTextComment.getText().toString());
+
+            //UserNameを取得できる場合は、コメントに追加する
+            String contentHeader = "対応コメント";
+            if(_setting != null && _setting.getUserName() != null && _setting.getUserName().length() > 0){
+                contentHeader += "(" + _setting.getUserName() + ")";
+            };
+            contentHeader += ":";
+            eventLog.setContent(contentHeader + _editTextComment.getText().toString());
+
             _eventLogStoreService.insertEventLog(eventLog);
 
             //Return to MainActivity.
