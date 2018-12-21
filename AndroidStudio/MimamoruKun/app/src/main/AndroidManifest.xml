@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.slack.nagoyalab_sutra03.teamc.mimamorukun">
 
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -13,18 +18,24 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".EventLogDetailActivity" />
         <activity android:name=".TemperatureEventActivity" />
         <activity android:name=".HandlingRequiredEventActivity" />
-
         <service android:name=".EventLog.EventLogStoreService" />
         <service android:name=".Sensor.SensorService" />
-
         <activity android:name=".SettingActivity"></activity>
+
+        <service
+            android:name="xuzhongwei.gunsecury.service.BluetoothLeService"
+            android:enabled="true"
+            android:exported="true" />
+        <activity android:name="xuzhongwei.gunsecury.DeviceDetailActivity"/>
+        <activity android:name="xuzhongwei.gunsecury.WelcomeActivity" />
+        <activity android:name="xuzhongwei.gunsecury.DeviceScanActivity" />
+        <activity android:name="xuzhongwei.gunsecury.MyWorldActivity" />
     </application>
 
 </manifest>
