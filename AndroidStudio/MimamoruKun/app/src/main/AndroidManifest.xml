@@ -24,14 +24,15 @@
         <activity android:name=".EventLogDetailActivity" />
         <activity android:name=".TemperatureEventActivity" />
         <activity android:name=".HandlingRequiredEventActivity" />
+        <service android:name="xuzhongwei.gunsecury.service.BluetoothLeService" />
         <service android:name=".EventLog.EventLogStoreService" />
         <service android:name=".Sensor.SensorService" />
         <activity android:name=".SettingActivity"></activity>
-
+<!--
         <service
             android:name="xuzhongwei.gunsecury.service.BluetoothLeService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true" />-->
         <activity android:name="xuzhongwei.gunsecury.DeviceDetailActivity"/>
         <activity android:name="xuzhongwei.gunsecury.WelcomeActivity" />
         <activity android:name="xuzhongwei.gunsecury.DeviceScanActivity" />

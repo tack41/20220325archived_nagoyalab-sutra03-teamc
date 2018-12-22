@@ -16,4 +16,9 @@
         android:orderInCategory="200"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menuitem_scan_bluetooth"
+        android:title="@string/scan_string"
+        android:orderInCategory="200"
+        app:showAsAction="never" />
 </menu>

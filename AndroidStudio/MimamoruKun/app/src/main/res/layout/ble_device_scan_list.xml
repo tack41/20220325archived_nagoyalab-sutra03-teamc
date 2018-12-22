@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp">
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight="2"
+            android:layout_height="match_parent"
+            android:src="@drawable/icons8_android_tablet_50"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="9"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/deviceName"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center"
+                android:layout_weight="2"
+                android:fontFamily="cursive"
+                android:text="重山晃太のパピー"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textSize="24sp"
+                android:textColor="#000"/>
+            <TextView
+                android:id="@+id/deviceAddrress"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:fontFamily="cursive"
+                android:text="UUID:9856473948562456"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textSize="12sp"
+                android:textColor="#000"/>
+        </LinearLayout>
+
+
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@drawable/radio_wave"/>
+    </LinearLayout>
+
+
+
+</LinearLayout>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="xuzhongwei.gunsecury.DeviceScanActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="10"
+        android:orientation="vertical">
+
+        <ListView
+            android:id="@+id/ble_scan_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </ListView>
+
+    </LinearLayout>
+
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/my_scan_button_shape"
+        android:text="@string/scan_string"
+        android:onClick="startScan"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+
+</LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/connectingProgress"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:max="100"
+        android:indeterminate="true"
+        android:indeterminateDrawable="@drawable/circular_progress"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+</FrameLayout>

@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -134,9 +135,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
     // オプションメニューのアイテムが選択されたときに呼び出されるメソッド
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+
+        Intent intent = null;
+
         switch (item.getItemId()) {
             case R.id.menuitem_settings:
-                Intent intent = new Intent(this, SettingActivity.class);
+                intent = new Intent(this, SettingActivity.class);
+                _setting.putToIntent(intent);
+                startActivityForResult(intent, 0);
+                return true;
+            case R.id.menuitem_scan_bluetooth:
+                intent = new Intent(this, xuzhongwei.gunsecury.DeviceScanActivity.class);
                 _setting.putToIntent(intent);
                 startActivityForResult(intent, 0);
                 return true;
