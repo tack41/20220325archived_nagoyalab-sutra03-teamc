@@ -23,7 +23,6 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.MainActivity;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +50,7 @@ public class DeviceScanActivity extends AppCompatActivity {
     ArrayList<GenericBleProfile> bleProfiles = new ArrayList<GenericBleProfile>();
     private BroadcastReceiver receiver;
 
-    private ServiceConnection _connectionSensorService = new ServiceConnection() {
+    private ServiceConnection mConnectionBLEService = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             mBluetoothLeService = ((BluetoothLeService.LocalBinder)service).getService();
 
@@ -105,13 +104,15 @@ public class DeviceScanActivity extends AppCompatActivity {
         }
 
         public void onServiceDisconnected(ComponentName className) {
-           mBluetoothLeService = null;
+           unregisterReceiver(receiver);
+            mBluetoothLeService = null;
         }
     };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.layout.device_scan);
         mProgressBar = (ProgressBar) findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.connectingProgress);
         mActivity = this;
@@ -121,13 +122,18 @@ public class DeviceScanActivity extends AppCompatActivity {
         mBLEController = new BLEController(this);
 //        mBluetoothLeService = BluetoothLeService.getInstance();
 
-        // Bind SensorService
-        Intent i2 = new Intent(getBaseContext(), BluetoothLeService.class);
-        bindService(i2, _connectionSensorService, Context.BIND_AUTO_CREATE);
-
+        // Bind BLEService
+        Intent intent = new Intent(getBaseContext(), BluetoothLeService.class);
+        bindService(intent, mConnectionBLEService, Context.BIND_AUTO_CREATE);
     }
 
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
 
+        // Unind BLEService
+        unbindService(mConnectionBLEService);
+    }
 
 
     public void startScan(View view){
@@ -173,18 +179,26 @@ public class DeviceScanActivity extends AppCompatActivity {
         stopScan();
     }
 
-    private void goToDeviceDetail(){
+    private void goToDeviceDetai(){
+        /*
         mProgressBar.setVisibility(View.GONE);
         Intent intent = new Intent(mActivity,DeviceDetailActivity.class);
         intent.putExtra(DeviceDetailActivity.EXTRA_DEVICE, mBluetoothDevice);
         mActivity.startActivity(intent);
+*/
+
+        //Return to main activity
+        Intent intent = getIntent();
+        intent.putExtra(MainActivity.EXTRA_DEVICE, mBluetoothDevice);
+        setResult(RESULT_OK, intent);
+        finish();
     }
 
 
     private void goToMyWorld(){
         mProgressBar.setVisibility(View.GONE);
         Intent intent = new Intent(mActivity,MyWorldActivity.class);
-        intent.putExtra(DeviceDetailActivity.EXTRA_DEVICE, mBluetoothDevice);
+        intent.putExtra(MainActivity.EXTRA_DEVICE, mBluetoothDevice);
         mActivity.startActivity(intent);
     }
 
@@ -201,7 +215,7 @@ public class DeviceScanActivity extends AppCompatActivity {
             super.handleMessage(msg);
             showToast("connected");
             unregisterReceiver(receiver);
-            goToDeviceDetail();
+            goToDeviceDetai();
         }
     }
 

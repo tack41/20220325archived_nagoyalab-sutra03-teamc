@@ -556,8 +556,6 @@ public class BluetoothLeService extends Service {
     public void onCreate() {
         super.onCreate();
         initialBlueTooth();
-
-        this.initialize();
     }
 
     private void unlockBlockingThread(int status) {
@@ -610,6 +608,8 @@ public class BluetoothLeService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        this.initialBlueTooth();
+        this.initialize();
         return binder;
     }
 
@@ -620,6 +620,11 @@ public class BluetoothLeService extends Service {
         // such that resources are cleaned up properly. In this particular example,
         // close() is
         // invoked when the UI is disconnected from the Service.
+        if (mBluetoothGatt != null) {
+            mBluetoothGatt.close();
+            mBluetoothGatt = null;
+        }
+
         close();
         return super.onUnbind(intent);
     }

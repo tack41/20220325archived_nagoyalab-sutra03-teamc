@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true"/>
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -33,7 +37,6 @@
             android:name="xuzhongwei.gunsecury.service.BluetoothLeService"
             android:enabled="true"
             android:exported="true" />-->
-        <activity android:name="xuzhongwei.gunsecury.DeviceDetailActivity"/>
         <activity android:name="xuzhongwei.gunsecury.WelcomeActivity" />
         <activity android:name="xuzhongwei.gunsecury.DeviceScanActivity" />
         <activity android:name="xuzhongwei.gunsecury.MyWorldActivity" />

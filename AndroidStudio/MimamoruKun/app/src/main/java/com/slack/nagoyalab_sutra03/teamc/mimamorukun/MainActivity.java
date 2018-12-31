@@ -1,20 +1,29 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -45,8 +54,72 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import android.widget.Toast;
+
+import xuzhongwei.gunsecury.common.GattInfo;
+import xuzhongwei.gunsecury.controllers.BLEController;
+import xuzhongwei.gunsecury.profile.AcceleroteProfile;
+import xuzhongwei.gunsecury.profile.AmbientTemperatureProfile;
+import xuzhongwei.gunsecury.profile.BarometerProfile;
+import xuzhongwei.gunsecury.profile.GenericBleProfile;
+import xuzhongwei.gunsecury.profile.HumidityProfile;
+import xuzhongwei.gunsecury.profile.IRTTemperature;
+import xuzhongwei.gunsecury.profile.LuxometerProfile;
+import xuzhongwei.gunsecury.profile.MovementProfile;
+import xuzhongwei.gunsecury.service.BluetoothLeService;
+import android.Manifest;
+import android.content.pm.PackageManager;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
+
+    private Activity mActivity;
+
+    TextView _textViewOpticalValue;
+    TextView _textViewAccelerationValue;
+    TextView _textViewGyroValue;
+
+    BLEController mainController;
+    private BluetoothDevice mBluetoothDevice = null;
+    ArrayList<GenericBleProfile> bleProfiles = new ArrayList<GenericBleProfile>();
+    private BluetoothGatt mBtGatt = null;
+    public static final String EXTRA_DEVICE = "EXTRA_DEVICE";
+    private BroadcastReceiver receiver;
+    private BluetoothLeService mBluetoothLeService;
+
+    ArrayList<BluetoothGattCharacteristic> characteristicList = new ArrayList<BluetoothGattCharacteristic>();
+    private static final int CHARACTERISTICS_FOUND = 1;
+    private static final String CHARACTERISTICS_FOUND_RESULT = "CHARACTERISTICS_FOUND_RESULT";
+    private List<GenericBleProfile> mProfiles;
+    List<BluetoothGattService> bleServiceList = new ArrayList<BluetoothGattService>();
+
+    private Boolean mIsSensorTag2 = false;
+    public boolean isSensorTag2() {
+        return mIsSensorTag2;
+    }
+    protected static MainActivity mThis = null;
+    public static MainActivity getInstance() {
+        return (MainActivity) mThis;
+    }
+
+    private UIHandler mUIHandler = new UIHandler();
+    class UIHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case CHARACTERISTICS_FOUND:
+                    int res = msg.getData().getInt(CHARACTERISTICS_FOUND_RESULT);
+                    showToast(res+"");
+                    break;
+            }
+        }
+    }
+    private void showToast(String str){
+        Toast toast = Toast.makeText(mActivity,str,Toast.LENGTH_LONG);
+        toast.show();
+    }
+
+
 
     //TextView to display current time.
     private TextView _textView_time;
@@ -124,6 +197,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
         }
     };
 
+    private ServiceConnection mConnectionBLEService = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mBluetoothLeService = ((BluetoothLeService.LocalBinder)service).getService();
+
+            initialReceiver();
+            onViewInfalted();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            unregisterReceiver(receiver);
+            mBluetoothLeService = null;
+        }
+    };
+
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         //main.xmlの内容を読み込む
@@ -164,6 +252,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mActivity = this;
+
+        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // 権限がない場合はリクエスト
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        }
 
         //Load setting
         _setting = Setting.load();
@@ -185,12 +279,25 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
         //Display time.
         displayTime();
 
-        //Create Notification Channel
-        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationChannel channel = new NotificationChannel(getString(R.string.app_name), getString(R.string.app_name), NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setLightColor(Color.YELLOW);
-        channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-        manager.createNotificationChannel(channel);
+        mBluetoothLeService = BluetoothLeService.getInstance();
+        Intent intent = getIntent();
+        mBluetoothDevice = intent.getParcelableExtra(EXTRA_DEVICE);
+        mainController = new BLEController(this);
+        mProfiles = new ArrayList<GenericBleProfile>();
+
+        mIsSensorTag2 = false;
+        // Determine type of SensorTagGatt
+        if(mBluetoothDevice != null){
+            String deviceName = mBluetoothDevice.getName();
+            if ((deviceName.equals("SensorTag2")) ||(deviceName.equals("CC2650 SensorTag"))) {
+                mIsSensorTag2 = true;
+            }
+        }
+
+        initialReceiver();
+        onViewInfalted();
+        mThis = this;
+
     }
 
     @Override
@@ -201,6 +308,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
 
         unbindService(_connectionEventLogStoreService);
         unbindService(_connectionSensorService);
+        if(mConnectionBLEService != null){
+            unbindService(mConnectionBLEService);
+        }
     }
 
     /**
@@ -253,6 +363,425 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
         _buttonSimulateLightEvent.setOnClickListener(this);
         _buttonSimulateSwingEvent = findViewById(R.id.button_simulate_swing_event);
         _buttonSimulateSwingEvent.setOnClickListener(this);
+
+        _textViewOpticalValue = (TextView)findViewById(R.id.textview_optical_value);
+        _textViewAccelerationValue = (TextView)findViewById(R.id.textview_acceleration_value);
+        _textViewGyroValue = (TextView)findViewById(R.id.textview_gyro_value);
+    }
+
+    private void initialReceiver(){
+
+        receiver  = new BroadcastReceiver() {
+
+            List <BluetoothGattService> serviceList;
+            List <BluetoothGattCharacteristic> charList = new ArrayList<BluetoothGattCharacteristic>();
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                final String action = intent.getAction();
+                final int status = intent.getIntExtra(BluetoothLeService.EXTRA_STATUS,
+                        BluetoothGatt.GATT_SUCCESS);
+
+                if(intent.getAction().equals(BluetoothLeService.ACTION_DATA_NOTIFY)){
+                    byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                    String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
+
+                    for(int i=0;i<characteristicList.size();i++){
+                        BluetoothGattCharacteristic bleCharacteristic = characteristicList.get(i);
+                        if(bleCharacteristic.getUuid().toString().equals(uuidStr)){
+                            for(int j=0;j<mProfiles.size();j++){
+                                if(mProfiles.get(j).checkNormalData(uuidStr)){
+                                    mProfiles.get(j).updateData(value);
+                                }
+                            }
+                        }
+                    }
+                }else if(intent.getAction().equals(BluetoothLeService.ACTION_DATA_READ)){
+                    // Data read
+                    byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                    String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
+                    for (int ii = 0; ii < charList.size(); ii++) {
+                        BluetoothGattCharacteristic tempC = charList.get(ii);
+                        if ((tempC.getUuid().toString().equals(uuidStr))) {
+                            for (int jj = 0; jj < mProfiles.size(); jj++) {
+                                GenericBleProfile p = mProfiles.get(jj);
+                                p.didReadValueForCharacteristic(tempC);
+                            }
+                            //Log.d("DeviceActivity","Got Characteristic : " + tempC.getUuid().toString());
+                            break;
+                        }
+                    }
+                }else if(intent.getAction().equals(BluetoothLeService.ACTION_DATA_WRITE)){
+
+                    byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                    String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
+                    for (int ii = 0; ii < charList.size(); ii++) {
+                        BluetoothGattCharacteristic tempC = charList.get(ii);
+                        if ((tempC.getUuid().toString().equals(uuidStr))) {
+                            for (int jj = 0; jj < mProfiles.size(); jj++) {
+                                GenericBleProfile p = mProfiles.get(jj);
+                                p.didWriteValueForCharacteristic(tempC);
+                            }
+                            //Log.d("DeviceActivity","Got Characteristic : " + tempC.getUuid().toString());
+                            break;
+                        }
+                    }
+
+                }else if(intent.getAction().equals(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED)){
+
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        bleServiceList = mBluetoothLeService.getBLEService();
+                        if(bleServiceList.size() > 0){
+                            for(int i=0;i<bleServiceList.size();i++){
+                                List<BluetoothGattCharacteristic> characteristics = bleServiceList.get(i).getCharacteristics();
+                                if(characteristics.size() > 0){
+                                    for(int j=0;j<characteristics.size();j++){
+                                        characteristicList.add(characteristics.get(j));
+                                    }
+                                }
+                            }
+                        }
+
+
+                        serviceList = mBluetoothLeService.getSupportedGattServices();
+                        if (serviceList.size() > 0) {
+                            for (int ii = 0; ii < serviceList.size(); ii++) {
+                                BluetoothGattService s = serviceList.get(ii);
+                                List<BluetoothGattCharacteristic> c = s.getCharacteristics();
+                                if (c.size() > 0) {
+                                    for (int jj = 0; jj < c.size(); jj++) {
+                                        charList.add(c.get(jj));
+                                    }
+                                }
+                            }
+                        }
+
+                        Thread work = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                //Iterate through the services and add GenericBluetoothServices for each service
+                                int nrNotificationsOn = 0;
+                                int maxNotifications;
+                                int servicesDiscovered = 0;
+                                int totalCharacteristics = 0;
+                                //serviceList = mBtLeService.getSupportedGattServices();
+                                for (BluetoothGattService s : serviceList) {
+                                    List<BluetoothGattCharacteristic> chars = s.getCharacteristics();
+                                    totalCharacteristics += chars.size();
+                                }
+                                //Special
+                                if (totalCharacteristics == 0) {
+                                    //Something bad happened, we have a problem
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast toast = Toast.makeText(getApplicationContext(),"Service discovered but not characteristics has been found",Toast.LENGTH_SHORT);
+                                            toast.show();
+                                        }
+                                    });
+                                    return;
+                                }
+
+                                final int final_totalCharacteristics = totalCharacteristics;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast toast = Toast.makeText(getApplicationContext(),"Found a total of " + serviceList.size() + " services with a total of " + final_totalCharacteristics + " characteristics on this device",Toast.LENGTH_SHORT );
+                                        toast.show();
+                                    }
+                                });
+
+                                if (Build.VERSION.SDK_INT > 18) maxNotifications = 7;
+                                else {
+                                    maxNotifications = 4;
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(getApplicationContext(), "Android version 4.3 detected, max 4 notifications enabled", Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                }
+                                for (int ii = 0; ii < serviceList.size(); ii++) {
+                                    BluetoothGattService s = serviceList.get(ii);
+                                    List<BluetoothGattCharacteristic> chars = s.getCharacteristics();
+                                    if (chars.size() == 0) {
+
+                                        Log.d("DeviceActivity", "No characteristics found for this service !!!");
+
+                                    }
+                                    servicesDiscovered++;
+                                    final float serviceDiscoveredcalc = (float)servicesDiscovered;
+                                    final float serviceTotalcalc = (float)serviceList.size();
+/*                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            progressDialog.setProgress((int)((serviceDiscoveredcalc / (serviceTotalcalc - 1)) * 100));
+                                        }
+                                    });*/
+                                    Log.d("DeviceActivity", "Configuring service with uuid : " + s.getUuid().toString());
+
+                                    if (LuxometerProfile.isCorrectService(s)) {
+                                        LuxometerProfile lux = new LuxometerProfile(mBluetoothLeService,s,mBluetoothDevice);
+                                        mProfiles.add(lux);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            lux.configureService();
+                                            nrNotificationsOn++;
+                                        }
+                                        lux.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+                                            @Override
+                                            public void onDataChanged(String data) {
+                                                final String finalData = data;
+                                                Log.d("DeviceNotify", "Luxometer:" + data);
+                                                _handler.post(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        _textViewOpticalValue.setText(finalData);
+                                                    }
+                                                });
+//                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.luxometerValue)).setText(data);
+                                            }
+                                        });
+                                    }
+
+
+                                    if (HumidityProfile.isCorrectService(s)) {
+                                        HumidityProfile hum = new HumidityProfile(mBluetoothLeService,s,mBluetoothDevice);
+//                                                    hum.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+//                                                        @Override
+//                                                        public void onDataChanged(String data) {
+//                                                            ((TextView) mActivity.findViewById(R.id.humidityValue)).setText(data);
+//                                                        }
+//                                                    });
+
+                                        hum.setmOnHumidityListener(new HumidityProfile.OnHumidityListener() {
+                                            @Override
+                                            public void onHumidityChanged(double data) {
+                                                Log.d("DeviceNotify", "Humidity:" + data);
+//ß                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.humidityValue)).setText(data+"");
+                                            }
+                                        });
+
+                                        mProfiles.add(hum);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            hum.configureService();
+                                            nrNotificationsOn++;
+                                        }
+                                        Log.d("DeviceActivity","Found Humidity !");
+                                    }
+
+
+                                    if (MovementProfile.isCorrectService(s)) {
+                                        MovementProfile mov = new MovementProfile(mBluetoothLeService,s,mBluetoothDevice);
+//                                                    mov.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+//                                                        @Override
+//                                                        public void onDataChanged(String data) {
+//                                                            ((TextView) mActivity.findViewById(R.id.movementValue)).setText(data);
+//                                                        }
+//                                                    });
+
+                                        mov.setmOnMovementListener(new MovementProfile.OnMovementListener() {
+                                            @Override
+                                            public void onMovementACCChanged(double x, double y, double z) {
+  /*                                              ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue1X)).setText(x+"");
+                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue1Y)).setText(y+"");
+                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue1Z)).setText(z+"");*/
+                                                Log.d("DeviceNotify", "Move_ACC:" + x + "," + y + "," + z);
+                                            }
+
+                                            @Override
+                                            public void onMovementGYROChanged(double x, double y, double z) {
+/*                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue2X)).setText(x+"");
+                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue2Y)).setText(y+"");
+                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue2Z)).setText(z+"");*/
+                                                _textViewGyroValue.setText("ジャイロ: x=" + x + ", y=" + y + ", z=" + z);
+                                                Log.d("DeviceNotify", "Move_GYRO:" + x + "," + y + "," + z);
+                                            }
+
+                                            @Override
+                                            public void onMovementMAGChanged(double x, double y, double z) {
+/*                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue3X)).setText(x+"");
+                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue3Y)).setText(y+"");
+                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.movementValue3Z)).setText(z+"");*/
+                                                Log.d("DeviceNotify", "Move_MAG:" + x + "," + y + "," + z);
+                                            }
+                                        });
+                                        mProfiles.add(mov);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            mov.configureService();
+                                            nrNotificationsOn++;
+                                        }
+                                        Log.d("DeviceActivity","Found Motion !");
+                                    }
+
+
+                                    if (AcceleroteProfile.isCorrectService(s)) {
+                                        AcceleroteProfile acc = new AcceleroteProfile(mBluetoothLeService,s,mBluetoothDevice);
+                                        acc.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+                                            @Override
+                                            public void onDataChanged(String data) {
+//                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.acceleroterValue)).setText(data);
+                                                final String finalData = data;
+                                                _handler.post(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        _textViewAccelerationValue.setText("加速度:" + finalData);
+                                                    }
+                                                });
+                                                Log.d("DeviceNotify", "Accele:" + data);
+                                           }
+                                        });
+                                        mProfiles.add(acc);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            acc.configureService();
+                                            nrNotificationsOn++;
+                                        }
+                                        Log.d("DeviceActivity","Found Motion !");
+                                    }
+
+                                    if (IRTTemperature.isCorrectService(s)) {
+                                        IRTTemperature irTemp = new IRTTemperature(mBluetoothLeService,s,mBluetoothDevice);
+                                        irTemp.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+                                            @Override
+                                            public void onDataChanged(String data) {
+//                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.irTempratureValue)).setText(data);
+                                                Log.d("DeviceNotify", "IRTTemperature:" + data);
+                                            }
+                                        });
+                                        mProfiles.add(irTemp);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            irTemp.configureService();
+                                        }
+                                        //No notifications add here because it is already enabled above ..
+                                        Log.d("DeviceActivity","Found IR Temperature !");
+                                    }
+
+                                    if (BarometerProfile.isCorrectService(s)) {
+                                        BarometerProfile bar = new BarometerProfile(mBluetoothLeService,s,mBluetoothDevice);
+                                        bar.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+                                            @Override
+                                            public void onDataChanged(String data) {
+//                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.barometerValue)).setText(data);
+                                                Log.d("DeviceNotify", "Barometer:" + data);
+                                            }
+                                        });
+                                        mProfiles.add(bar);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            bar.configureService();
+                                        }
+                                        //No notifications add here because it is already enabled above ..
+                                        Log.d("DeviceActivity","Found IR Temperature !");
+                                    }
+
+                                    if (AmbientTemperatureProfile.isCorrectService(s)) {
+                                        AmbientTemperatureProfile ambient = new AmbientTemperatureProfile(mBluetoothLeService,s,mBluetoothDevice);
+                                        ambient.setmOnDataChangedListener(new GenericBleProfile.OnDataChangedListener() {
+                                            @Override
+                                            public void onDataChanged(String data) {
+//                                                ((TextView) mActivity.findViewById(com.slack.nagoyalab_sutra03.teamc.mimamorukun.R.id.ambientTempratureValue)).setText(data);
+                                                Log.d("DeviceNotify", "AmbientTemperature" + data);
+                                            }
+                                        });
+                                        mProfiles.add(ambient);
+                                        if (nrNotificationsOn < maxNotifications) {
+                                            ambient.configureService();
+                                            nrNotificationsOn++;
+                                        }
+                                        Log.d("DeviceActivity","Found Ambient Temperature !");
+                                    }
+
+
+                                }
+
+
+/*                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        progressDialog.setTitle("Enabling Services");
+                                        progressDialog.setMax(mProfiles.size());
+                                        progressDialog.setProgress(0);
+                                    }
+                                });*/
+
+                                for (final GenericBleProfile p : mProfiles) {
+                                    if(p != null){
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                p.enableService();
+//                                            progressDialog.setProgress(progressDialog.getProgress() + 1);
+                                            }
+                                        });
+                                    }
+//                                                p.onResume();
+                                }
+
+
+
+/*                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        progressDialog.hide();
+                                        progressDialog.dismiss();
+                                    }
+                                });*/
+
+
+
+                            }
+                        });
+                        work.start();
+
+
+
+
+                        Message msg = new Message();
+                        msg.what = CHARACTERISTICS_FOUND;
+                        Bundle bundle = new Bundle();
+                        bundle.putInt(CHARACTERISTICS_FOUND_RESULT,characteristicList.size());
+                        msg.setData(bundle);
+                        mUIHandler.sendMessage(msg);
+
+
+                    }else{
+                        Toast toast = Toast.makeText(getApplicationContext(),"not success get services",Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+
+
+
+                }else if(intent.getAction().equals(BluetoothLeService.ACTION_DATA_NOTIFY)){
+                    byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+                    String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
+
+
+
+                    for(int i=0;i<characteristicList.size();i++){
+                        BluetoothGattCharacteristic bleCharacteristic = characteristicList.get(i);
+                        if(bleCharacteristic.getUuid().toString().equals(uuidStr)){
+                            for(int j=0;j<bleProfiles.size();j++){
+                                if(bleProfiles.get(j).checkNormalData(uuidStr)){
+                                    bleProfiles.get(j).updateData(value);
+                                }
+                            }
+                        }
+
+                    }
+
+                }else{
+
+                }
+
+
+            }
+        };
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeService.FIND_NEW_BLE_DEVICE);
+        intentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(BluetoothLeService.ACTION_DATA_NOTIFY);
+        registerReceiver(receiver,intentFilter);
     }
 
     /**
@@ -387,5 +916,45 @@ public class MainActivity extends AppCompatActivity implements OnClickListener, 
         //イベント履歴を再度取得して表示
         this._eventLogList = _eventLogStoreService.getAllEvent();
         displayEventHistory();
+
+
+        mBluetoothDevice = intent.getParcelableExtra(EXTRA_DEVICE);
+        if(intent == null){
+            Toast.makeText(this, "nullllllllllllllllllllllllllllllllllll" +
+                    "", Toast.LENGTH_LONG);
+        }
+
+        if(mBluetoothDevice != null){
+            Toast.makeText(this , "BLE機器取得:" + mBluetoothDevice.toString(), Toast.LENGTH_LONG).show();
+
+            mBluetoothLeService = BluetoothLeService.getInstance();
+            mainController = new BLEController(this);
+            mProfiles = new ArrayList<GenericBleProfile>();
+
+            mIsSensorTag2 = false;
+            // Determine type of SensorTagGatt
+            String deviceName = mBluetoothDevice.getName();
+            if ((deviceName.equals("SensorTag2")) ||(deviceName.equals("CC2650 SensorTag"))) {
+                mIsSensorTag2 = true;
+            }
+
+
+
+            // Bind BLEService
+            Intent i1 = new Intent(getBaseContext(), BluetoothLeService.class);
+            bindService(i1, mConnectionBLEService, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    private void onViewInfalted(){
+        mBtGatt = BluetoothLeService.getBtGatt();
+
+        if(mBtGatt != null){
+            if (mBtGatt.discoverServices()) {
+                boolean succuess = true;
+            } else {
+                boolean succuess = false;
+            }
+        }
     }
 }

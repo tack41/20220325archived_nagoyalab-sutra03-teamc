@@ -7,11 +7,13 @@ package xuzhongwei.gunsecury.util.Adapter.sensor;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.MainActivity;
+
 import java.util.List;
 import java.util.UUID;
 
 import static java.lang.Math.pow;
-import xuzhongwei.gunsecury.DeviceDetailActivity;
+
 import xuzhongwei.gunsecury.common.GattInfo;
 import static xuzhongwei.gunsecury.common.GattInfo.UUID_ACC_CONF;
 import static xuzhongwei.gunsecury.common.GattInfo.UUID_ACC_DATA;
@@ -143,7 +145,7 @@ public enum Sensor {
         @Override
         public Point3D convert(final byte [] value) {
 
-            if (DeviceDetailActivity.getInstance().isSensorTag2()) {
+            if (MainActivity.getInstance().isSensorTag2()) {
                 if (value.length > 4) {
                     Integer val = twentyFourBitUnsignedAtOffset(value, 2);
                     return new Point3D((double) val / 100.0, 0, 0);

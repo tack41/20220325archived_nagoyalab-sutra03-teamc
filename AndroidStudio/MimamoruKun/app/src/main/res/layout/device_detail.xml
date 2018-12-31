@@ -5,8 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/drawer_layout"
-    tools:context="xuzhongwei.gunsecury.DeviceDetailActivity">
+    android:id="@+id/drawer_layout">
 
     <LinearLayout
         android:id="@+id/ambient_temprature_layout"
@@ -89,243 +88,243 @@
         android:orientation="vertical"
         android:visibility="invisible">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="加速度 X"
-                android:layout_columnWeight="1"
-                android:layout_rowWeight="1"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue1X"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:layout_columnWeight="2"
-                android:layout_rowWeight="2"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="加速度 X"
+                    android:layout_columnWeight="1"
+                    android:layout_rowWeight="1"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue1X"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:layout_columnWeight="2"
+                    android:layout_rowWeight="2"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="加速度 Y"
+                    android:layout_columnWeight="1"
+                    android:layout_rowWeight="1"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue1Y"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:layout_columnWeight="2"
+                    android:layout_rowWeight="2"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="加速度 Z"
+                    android:layout_columnWeight="1"
+                    android:layout_rowWeight="1"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue1Z"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:layout_columnWeight="2"
+                    android:layout_rowWeight="2"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="加速度 Y"
-                android:layout_columnWeight="1"
-                android:layout_rowWeight="1"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue1Y"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:layout_columnWeight="2"
-                android:layout_rowWeight="2"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-        </LinearLayout>
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="ジャイロスコープ X"
+                    android:layout_columnWeight="1"
+                    android:layout_rowWeight="1"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue2X"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="ジャイロスコープ Y"
+                    android:layout_columnWeight="1"
+                    android:layout_rowWeight="1"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue2Y"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
 
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="加速度 Z"
-                android:layout_columnWeight="1"
-                android:layout_rowWeight="1"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue1Z"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:layout_columnWeight="2"
-                android:layout_rowWeight="2"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="ジャイロスコープ X"
-                android:layout_columnWeight="1"
-                android:layout_rowWeight="1"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue2X"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="ジャイロスコープ Z"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue2Z"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="ジャイロスコープ Y"
-                android:layout_columnWeight="1"
-                android:layout_rowWeight="1"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue2Y"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="磁石 X"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue3X"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="磁石 Y"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue3Y"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:textSize="15dp"
+                    android:text="磁石 Z"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+                <TextView
+                    android:id="@+id/movementValue3Z"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="6"
+                    android:textSize="15dp"
+                    android:text="123456.333"
+                    android:textAlignment="center"
+                    android:layout_gravity="center"/>
+            </LinearLayout>
+
+
+
         </LinearLayout>
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="ジャイロスコープ Z"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue2Z"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="磁石 X"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue3X"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="磁石 Y"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue3Y"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:textSize="15dp"
-                android:text="磁石 Z"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-            <TextView
-                android:id="@+id/movementValue3Z"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:textSize="15dp"
-                android:text="123456.333"
-                android:textAlignment="center"
-                android:layout_gravity="center"/>
-        </LinearLayout>
-
-
-
-    </LinearLayout>
 
     </LinearLayout>
 
@@ -475,13 +474,13 @@
 
 
     <ListView android:id="@+id/left_drawer"
-              android:layout_width="240dp"
-              android:layout_height="match_parent"
-              android:layout_gravity="start"
-              android:choiceMode="singleChoice"
-              android:divider="@android:color/transparent"
-              android:dividerHeight="0dp"
-              android:background="@color/colorWhite"/>
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:choiceMode="singleChoice"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:background="@color/colorWhite"/>
 
 
 </android.support.v4.widget.DrawerLayout>
