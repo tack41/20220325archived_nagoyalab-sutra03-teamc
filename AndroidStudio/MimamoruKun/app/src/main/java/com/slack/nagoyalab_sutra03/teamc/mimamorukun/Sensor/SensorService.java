@@ -1,16 +1,19 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor;
 
+import android.Manifest;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
-import android.util.Log;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -99,6 +102,12 @@ public class SensorService extends Service {
     //Timer
     Timer _timer;
 
+    BluetoothManager _bluetoothManager;
+    BluetoothAdapter _bluetoothAdapter;
+    BluetoothLeScanner _bleScanner;
+    BluetoothGatt _bluetoothGatt;
+    boolean _bleDeviceConnected = false;
+
     EventLogStoreService _eventLogStoreService;
     // Serviceとのインターフェースクラス
     private ServiceConnection mConnection = new ServiceConnection() {
@@ -119,6 +128,10 @@ public class SensorService extends Service {
         // Bind EventLogStoreService
         Intent i = new Intent(getBaseContext(), EventLogStoreService.class);
         bindService(i, mConnection, Context.BIND_AUTO_CREATE);
+
+        _bluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+        _bluetoothAdapter = _bluetoothManager.getAdapter();
+        _bleScanner = _bluetoothAdapter.getBluetoothLeScanner();
 
         // Start measuring
         stopTimer();
@@ -225,15 +238,6 @@ public class SensorService extends Service {
         //Save EventLog
         _eventLogStoreService.saveEvent(event);
 
-        //Post notification
-        NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationCompat.Builder builder
-                = new NotificationCompat.Builder(MyApplication.getInstance(), getString(R.string.app_name))
-                .setContentTitle(event.getMessage())
-                .setContentText(event.getMessage())
-                .setSmallIcon(R.drawable.notification_icon_background);
-        NotificationManagerCompat.from(MyApplication.getInstance()).notify(1, builder.build());
-
         //Do all registered callback
         for(LightEventListener listner : _lightEventList){
             listner.onLighted(event);
@@ -248,15 +252,6 @@ public class SensorService extends Service {
 
         //Save EventLog
         _eventLogStoreService.saveEvent(event);
-
-        //Post notification
-        NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationCompat.Builder builder
-                = new NotificationCompat.Builder(MyApplication.getInstance(), getString(R.string.app_name))
-                .setContentTitle(event.getMessage())
-                .setContentText(event.getMessage())
-                .setSmallIcon(R.drawable.notification_icon_background);
-        NotificationManagerCompat.from(MyApplication.getInstance()).notify(1, builder.build());
 
         //Do all registered callback
         for(SwingEventListener listner : _swingEventList){
@@ -275,15 +270,6 @@ public class SensorService extends Service {
         if(_eventLogStoreService != null){
             _eventLogStoreService.saveEvent(event);
         }
-
-        //Post notification
-        NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationCompat.Builder builder
-                = new NotificationCompat.Builder(MyApplication.getInstance(), getString(R.string.app_name))
-                .setContentTitle(event.getMessage())
-                .setContentText(event.getMessage())
-                .setSmallIcon(R.drawable.notification_icon_background);
-        NotificationManagerCompat.from(MyApplication.getInstance()).notify(1, builder.build());
 
         //Do all registered callback
         for (TemperatureEventListener listner : _temperatureEventList) {
