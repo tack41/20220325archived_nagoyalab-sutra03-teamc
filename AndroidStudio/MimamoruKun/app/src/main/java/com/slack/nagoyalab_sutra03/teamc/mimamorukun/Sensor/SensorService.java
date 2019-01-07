@@ -1,29 +1,27 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor;
 
-import android.Manifest;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.IBinder;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.MyApplication;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.R;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import android.os.Handler;
 
 public class SensorService extends Service {
     private final IBinder _binder = new SensorService.LocalBinder();
@@ -98,6 +96,7 @@ public class SensorService extends Service {
     private List<SwingEventListener> _swingEventList = new ArrayList<>();
     private List<TemperatureEventListener> _temperatureEventList = new ArrayList<>();
     private List<MeasuredEventListener> _measuredEventList = new ArrayList<>();
+    private List<BluetoothDeviceListener> _bluetoothDeviceEventList = new ArrayList<>();
 
     //Timer
     Timer _timer;
@@ -105,8 +104,13 @@ public class SensorService extends Service {
     BluetoothManager _bluetoothManager;
     BluetoothAdapter _bluetoothAdapter;
     BluetoothLeScanner _bleScanner;
-    BluetoothGatt _bluetoothGatt;
+    boolean _bleScanning = false;
     boolean _bleDeviceConnected = false;
+
+    //Bluetooth scanのタイムアウト時間(ms)
+    final int SCAN_PERIOD = 10000;
+
+    Handler _handler;
 
     EventLogStoreService _eventLogStoreService;
     // Serviceとのインターフェースクラス
@@ -124,7 +128,7 @@ public class SensorService extends Service {
     };
 
     @Override
-    public IBinder onBind(Intent intent) {
+    public void onCreate(){
         // Bind EventLogStoreService
         Intent i = new Intent(getBaseContext(), EventLogStoreService.class);
         bindService(i, mConnection, Context.BIND_AUTO_CREATE);
@@ -133,15 +137,11 @@ public class SensorService extends Service {
         _bluetoothAdapter = _bluetoothManager.getAdapter();
         _bleScanner = _bluetoothAdapter.getBluetoothLeScanner();
 
-        // Start measuring
-        stopTimer();
-        startTimer();
-
-        return _binder;
+        _handler = new Handler();
     }
 
     @Override
-    public boolean onUnbind(Intent intent) {
+    public void onDestroy(){
         _lightEventList.clear();
         _swingEventList.clear();
         _temperatureEventList.clear();
@@ -149,10 +149,64 @@ public class SensorService extends Service {
         // Unbind EventLogStoreService
         unbindService(mConnection);
 
-        // Stop measuring
-        stopTimer();
+        _bleScanner = null;
+        _bluetoothAdapter = null;
+        _bluetoothManager = null;
+    }
 
+    @Override
+    public IBinder onBind(Intent intent) {
+        return _binder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
         return true;
+    }
+
+    public void startScan() {
+        if(_bleScanning) return; //既にscan中の場合は何もしない
+
+        //SCAN_PERIODで指定した時間が過ぎたらscanを停止する
+        _handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                _bleScanner.stopScan(_scanCallback);
+                _bleScanning = false;
+            }
+        }, SCAN_PERIOD);
+
+        _bleScanner.startScan(_scanCallback);
+        _bleScanning = true;
+    }
+
+    public void stopScan(){
+        if(!_bleScanning){
+            _bleScanner.stopScan(_scanCallback);
+        }
+    }
+
+    private ScanCallback _scanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            super.onScanResult(callbackType, result);
+
+            // デバイスが見つかった！
+            if (result != null && result.getDevice() != null) {
+                for(BluetoothDeviceListener listner: _bluetoothDeviceEventList ){
+                    listner.onFound(result.getDevice());
+                }
+            }
+        }
+    };
+
+    public void addBluetoothDeviceListener(BluetoothDeviceListener listener){
+        if(!_bluetoothDeviceEventList.contains(listener))
+            _bluetoothDeviceEventList.add(listener);
+    }
+    public void removeBluetoothDeviceListener(BluetoothDeviceListener listener){
+        if(_bluetoothDeviceEventList.contains(listener))
+            _bluetoothDeviceEventList.remove(listener);
     }
 
     public void addLightEventListener(LightEventListener listener){

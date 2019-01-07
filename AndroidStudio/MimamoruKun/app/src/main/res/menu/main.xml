@@ -11,9 +11,15 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menuitem_connect"
+        android:title="@string/menu_connect"
+        android:orderInCategory="200"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menuitem_help"
         android:title="@string/menu_help"
-        android:orderInCategory="200"
+        android:orderInCategory="300"
         app:showAsAction="never" />
 
 </menu>

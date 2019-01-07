@@ -1,7 +1,6 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -46,8 +45,10 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
-public class MainActivity extends Activity implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
+public class MainActivity extends AppCompatActivity  implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
 
     //TextView to display current time.
     private TextView _textView_time;
@@ -136,9 +137,10 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     // オプションメニューのアイテムが選択されたときに呼び出されるメソッド
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intent;
         switch (item.getItemId()) {
             case R.id.menuitem_settings:
-                Intent intent = new Intent(this, SettingActivity.class);
+                intent = new Intent(this, SettingActivity.class);
                 _setting.putToIntent(intent);
                 startActivityForResult(intent, 0);
                 return true;
@@ -149,6 +151,11 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
                         .setPositiveButton("OK", null)
                         .show();
                 return true;
+            case R.id.menuitem_connect:
+                intent = new Intent(this, SelectDeviceActivity.class);
+                _setting.putToIntent(intent);
+                startActivityForResult(intent, 0);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -157,6 +164,17 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // 権限がない場合はリクエスト
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.BLUETOOTH}, 1);
+        }
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.BLUETOOTH_ADMIN}, 1);
+        }
+        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        }
 
         //Load setting
         _setting = Setting.load();
@@ -185,16 +203,6 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
         channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
         manager.createNotificationChannel(channel);
 
-        // 権限がない場合はリクエスト
-        if (checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.BLUETOOTH}, 1);
-        }
-        if (checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.BLUETOOTH_ADMIN}, 1);
-        }
-        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-        }
     }
 
     @Override
@@ -380,13 +388,22 @@ public class MainActivity extends Activity implements OnClickListener, LightEven
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
-        //設定画面で値を変更した場合は、その内容を反映する
-        if(intent != null && Setting.getFromIntent(intent) != null){
-            _setting = Setting.getFromIntent(intent);
-            _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
-            _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
-            _sensorService.setInterval(_setting.getMeasurementInterval());
+        if(intent != null){
+            if(Setting.getFromIntent(intent) != null) {
+                //設定画面で値を変更した場合は、その内容を反映する
+                _setting = Setting.getFromIntent(intent);
+                _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
+                _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
+                _sensorService.setInterval(_setting.getMeasurementInterval());
+
+            }
+
+            if(intent.getStringExtra(SelectDeviceActivity.INTENT_KEY_DEVICE_ADDRESS) != null){
+                //接続画面で接続先機器を選択した場合
+                Toast.makeText(this, intent.getStringExtra(SelectDeviceActivity.INTENT_KEY_DEVICE_ADDRESS), Toast.LENGTH_LONG).show();
+            }
         }
+
 
         //イベント履歴を再度取得して表示
         this._eventLogList = _eventLogStoreService.getAllEvent();
