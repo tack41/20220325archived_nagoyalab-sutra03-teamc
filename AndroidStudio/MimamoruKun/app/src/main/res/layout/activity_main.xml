@@ -39,6 +39,46 @@
             android:layout_height="wrap_content"
             android:layout_weight="6"
             android:orientation="vertical" >
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_weight="1">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:textSize="8pt"
+                    android:id="@+id/textview_connection_status_title"
+                    android:text="接続状態: " />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:textSize="8pt"
+                    android:id="@+id/textview_connection_status_content"
+                    android:text="" />
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:textSize="12pt"
+                    android:id="@+id/textview_optcal_value"
+                    android:text="" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="3"
+                    android:textSize="12pt"
+                    android:id="@+id/textview_movement_value"
+                    android:text="" />
+
+            </LinearLayout>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

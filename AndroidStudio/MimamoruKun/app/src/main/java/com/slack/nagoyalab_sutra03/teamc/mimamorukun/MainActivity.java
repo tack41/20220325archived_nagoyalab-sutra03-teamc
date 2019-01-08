@@ -1,10 +1,10 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +27,7 @@ import android.view.MenuItem;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.BluetoothDeviceListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEvent;
@@ -46,14 +47,21 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity  implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
+
+    //Request Code
+    private final int SELECT_DEVICE_REQUEST = 101;
+    private final int SETTING_REQUEST = 201;
 
     //TextView to display current time.
     private TextView _textView_time;
 
     private TextView _textView_temperature;
+    private TextView _textviewConnectionStatusContent;
+    private TextView _textviewOpticalValue;
+    private TextView _textviewMovementValue;
+
 
     //TextViews to display latest event history.
     private List<TextView> _textViewList;
@@ -103,6 +111,8 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
         public void onServiceConnected(ComponentName className, IBinder service) {
             _sensorService = ((SensorService.LocalBinder)service).getService();
 
+            _sensorService.addBluetoothDeviceListener(_bluetoothDeviceListener);
+
             //Set initinal settings.
             _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
             _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
@@ -122,8 +132,58 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
             _sensorService.removeTemperatureEventListener(MainActivity.this);
             _sensorService.removeMeasuredEventListner(MainActivity.this);
 
+            _sensorService.removeBluetoothDeviceListener(_bluetoothDeviceListener);
+
             _sensorService = null;
         }
+    };
+
+    private BluetoothDeviceListener _bluetoothDeviceListener = new BluetoothDeviceListener() {
+        @Override
+        public void onFound(BluetoothDevice device) {}
+
+        @Override
+        public void onConnected(BluetoothDevice device) {
+            _handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    _textviewConnectionStatusContent.setText("接続されました");
+                }
+            });
+        }
+
+        @Override
+        public void onDisconnected(BluetoothDevice device) {
+            _handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    _textviewConnectionStatusContent.setText("切断されました");
+                }
+            });
+        }
+
+        @Override
+        public void onOpticalValueGet(final double value) {
+            _handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    _textviewOpticalValue.setText(value + "lux");
+                }
+            });
+        }
+
+        @Override
+        public void onMovementValueGet(final double accX, final double accY, final double accZ, final double gyroX, final double gyroY, final double gyroZ, final double magX, final double magY, final double magZ) {
+            _handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    _textviewMovementValue.setText(String.format("%.2f,%.2f,%.2f  %.2f,%.2f,%.2f  %.2f,%.2f,%.2f",accX, accY, accZ, gyroX, gyroY, gyroZ, magX, magY, magZ));
+                }
+            });
+        }
+
+        @Override
+        public void onTemperatureValueGet(double value) {}
     };
 
     @Override
@@ -142,19 +202,12 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
             case R.id.menuitem_settings:
                 intent = new Intent(this, SettingActivity.class);
                 _setting.putToIntent(intent);
-                startActivityForResult(intent, 0);
-                return true;
-            case R.id.menuitem_help:
-                new AlertDialog.Builder(this)
-                        .setTitle("使い方")
-                        .setMessage("まだ実装してません")
-                        .setPositiveButton("OK", null)
-                        .show();
+                startActivityForResult(intent, SETTING_REQUEST);
                 return true;
             case R.id.menuitem_connect:
                 intent = new Intent(this, SelectDeviceActivity.class);
                 _setting.putToIntent(intent);
-                startActivityForResult(intent, 0);
+                startActivityForResult(intent, SELECT_DEVICE_REQUEST);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -246,8 +299,20 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
     private void getUIInstances(){
 
         _textView_time = findViewById(R.id.textview_time);
-
         _textView_temperature = findViewById(R.id.textview_temperature);
+
+        _textviewConnectionStatusContent = findViewById(R.id.textview_connection_status_content);
+        _textviewConnectionStatusContent.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SelectDeviceActivity.class);
+                _setting.putToIntent(intent);
+                startActivityForResult(intent, SELECT_DEVICE_REQUEST);
+            }
+        });
+
+        _textviewOpticalValue = findViewById(R.id.textview_optcal_value);
+        _textviewMovementValue = findViewById(R.id.textview_movement_value);
 
         _textViewList = new ArrayList<>();
         _textViewList.add((TextView)findViewById(R.id.text_history1));
@@ -388,22 +453,26 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
-        if(intent != null){
-            if(Setting.getFromIntent(intent) != null) {
-                //設定画面で値を変更した場合は、その内容を反映する
-                _setting = Setting.getFromIntent(intent);
-                _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
-                _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
-                _sensorService.setInterval(_setting.getMeasurementInterval());
-
-            }
-
-            if(intent.getStringExtra(SelectDeviceActivity.INTENT_KEY_DEVICE_ADDRESS) != null){
-                //接続画面で接続先機器を選択した場合
-                Toast.makeText(this, intent.getStringExtra(SelectDeviceActivity.INTENT_KEY_DEVICE_ADDRESS), Toast.LENGTH_LONG).show();
-            }
+        switch(requestCode){
+            case  SELECT_DEVICE_REQUEST:
+                if(resultCode == RESULT_OK){
+                    String deviceAddress = intent.getStringExtra(SelectDeviceActivity.INTENT_KEY_DEVICE_ADDRESS);
+                    if(deviceAddress != null){
+                        _sensorService.connetAndMeasure(deviceAddress);
+                    }
+                }
+                break;
+            case SETTING_REQUEST:
+                if(requestCode == RESULT_OK){
+                    if(Setting.getFromIntent(intent) != null) {
+                        //設定画面で値を変更した場合は、その内容を反映する
+                        _setting = Setting.getFromIntent(intent);
+                        _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
+                        _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
+                        _sensorService.setInterval(_setting.getMeasurementInterval());
+                    }
+                }
         }
-
 
         //イベント履歴を再度取得して表示
         this._eventLogList = _eventLogStoreService.getAllEvent();

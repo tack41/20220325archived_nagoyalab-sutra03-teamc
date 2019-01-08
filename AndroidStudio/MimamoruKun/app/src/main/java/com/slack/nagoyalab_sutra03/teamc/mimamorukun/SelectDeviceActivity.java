@@ -33,7 +33,7 @@ public class SelectDeviceActivity extends AppCompatActivity{
             //Bind sensor events.
             _sensorService.addBluetoothDeviceListener(_bluetoothDeviceListner);
 
-            _sensorService.startScan();
+            _sensorService.startScanOnly();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -54,8 +54,19 @@ public class SelectDeviceActivity extends AppCompatActivity{
                     return;
             }
 
-            _listViewDeviceAdapter.add((device.getName() == null ? "(名前なし)" : device.getName()) + " " + device.getAddress());
+            _listViewDeviceAdapter.add((device.getName() == null ? "(名前なし)" : device.getName().trim()) + " " + device.getAddress().trim());
         }
+
+        @Override
+        public void onConnected(BluetoothDevice device){}
+        @Override
+        public void onDisconnected(BluetoothDevice device){}
+        @Override
+        public void onOpticalValueGet(double value){}
+        @Override
+        public void onMovementValueGet(double accX, double accY, double accZ, double gyroX, double gyroY, double gyroZ, double magX, double magY, double magZ){}
+        @Override
+        public void onTemperatureValueGet(double value){}
     };
 
     @Override
@@ -72,7 +83,10 @@ public class SelectDeviceActivity extends AppCompatActivity{
 
                 //Return to main activity
                 Intent intent = getIntent();
-                intent.putExtra(INTENT_KEY_DEVICE_ADDRESS, _listViewDeviceAdapter.getItem(position).split(" ")[1]);
+                //表示内容を空白で区切った際の一番最後の要素がアドレス
+                String[] deviceNameAddress =  _listViewDeviceAdapter.getItem(position).split(" ");
+                String deviceAddress = deviceNameAddress[deviceNameAddress.length-1];
+                intent.putExtra(INTENT_KEY_DEVICE_ADDRESS, deviceAddress);
                 setResult(RESULT_OK, intent);
                 finish();
             }
@@ -85,6 +99,10 @@ public class SelectDeviceActivity extends AppCompatActivity{
         _button_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                _sensorService.stopScan();
+                _sensorService.removeBluetoothDeviceListener(_bluetoothDeviceListner);
+
+                setResult(RESULT_CANCELED);
                 finish();
             }
         });
