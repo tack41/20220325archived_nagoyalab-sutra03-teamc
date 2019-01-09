@@ -32,18 +32,16 @@
                 android:textSize="30pt"
                 android:id="@+id/textview_temperature"
                 android:background="#994532"
-                android:text="25.3℃" />
+                android:text="xx.x℃" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="6"
             android:orientation="vertical" >
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_weight="1">
+                android:orientation="horizontal">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
@@ -57,95 +55,75 @@
                     android:textSize="8pt"
                     android:id="@+id/textview_connection_status_content"
                     android:text="" />
+            </LinearLayout>
+        </LinearLayout>
 
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="12pt"
+            android:id="@+id/text_history1"
+            android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="12pt"
+            android:id="@+id/text_history2"
+            android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="12pt"
+            android:id="@+id/text_history3"
+            android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="12pt"
+            android:id="@+id/text_history4"
+            android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="12pt"
+            android:id="@+id/text_history5"
+            android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_weight="1"
+            android:textSize="12pt"
+            android:id="@+id/text_history6"
+            android:text="" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:orientation="horizontal"
+            android:layout_weight="1">
+            <Button
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:textSize="12pt"
-                    android:id="@+id/textview_optcal_value"
-                    android:text="" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="3"
-                    android:textSize="12pt"
-                    android:id="@+id/textview_movement_value"
-                    android:text="" />
-
-            </LinearLayout>
-            <TextView
-                android:layout_width="match_parent"
+                android:textSize="8pt"
+                android:id="@+id/button_simulate_light_event"
+                android:text="(光event)" />
+            <Button
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textSize="12pt"
-                android:id="@+id/text_history1"
-                android:text="" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textSize="12pt"
-                android:id="@+id/text_history2"
-                android:text="" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textSize="12pt"
-                android:id="@+id/text_history3"
-                android:text="" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textSize="12pt"
-                android:id="@+id/text_history4"
-                android:text="" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textSize="12pt"
-                android:id="@+id/text_history5"
-                android:text="" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textSize="12pt"
-                android:id="@+id/text_history6"
-                android:text="" />
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|center_horizontal"
-                android:orientation="horizontal"
-                android:layout_weight="1">
-                <Button
-                   android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="8pt"
-                    android:id="@+id/button_simulate_light_event"
-                    android:text="(光event)" />
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="8pt"
-                    android:id="@+id/button_simulate_swing_event"
-                    android:text="(振動event)" />
-            </LinearLayout>
+                android:textSize="8pt"
+                android:id="@+id/button_simulate_swing_event"
+                android:text="(振動event)" />
         </LinearLayout>
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>

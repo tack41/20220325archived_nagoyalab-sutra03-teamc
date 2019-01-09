@@ -1,16 +1,12 @@
 package com.slack.nagoyalab_sutra03.teamc.mimamorukun;
 
 import android.Manifest;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -24,23 +20,16 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLog;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogStoreService;
+import com.slack.nagoyalab_sutra03.teamc.mimamorukun.EventLog.EventLogType;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.BluetoothDeviceListener;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEventListener;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEvent;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.MeasuredEventListener;
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SensorService;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEventListener;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEventListener;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -48,20 +37,24 @@ import java.util.Timer;
 import java.util.TimerTask;
 import android.support.v7.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity  implements OnClickListener, LightEventListener, SwingEventListener, TemperatureEventListener , MeasuredEventListener {
+public class MainActivity extends AppCompatActivity  implements OnClickListener{
 
     //Request Code
     private final int SELECT_DEVICE_REQUEST = 101;
     private final int SETTING_REQUEST = 201;
+    private final int TEMPERATURE_EVENT_REQUEST = 301;
+    private final int OPTICAL_EVENT_REQUEST = 401;
+    private final int MOVEMENT_EVENT_REQUEST = 501;
+
+    public static final String INTENT_KEY_TEMPERATURE_ENABLE = "MainActivityIntentKeyTemperatureEnable";
+    public static final String INTENT_KEY_OPTICAL_ENABLE = "MainActivityIntentKeyOpticalEnable";
+    public static final String INTENT_KEY_MOVEMENT_ENABLE = "MainActivityIntentKeyMovementEnable";
 
     //TextView to display current time.
     private TextView _textView_time;
 
     private TextView _textView_temperature;
     private TextView _textviewConnectionStatusContent;
-    private TextView _textviewOpticalValue;
-    private TextView _textviewMovementValue;
-
 
     //TextViews to display latest event history.
     private List<TextView> _textViewList;
@@ -75,9 +68,6 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
 
     //Handler to get UI thread.
     private Handler _handler = new Handler();
-
-    //This class level accessible _handler required to get UI thread in timer event _handler.
-//    private Handler _handler = new Handler();
 
     //sound source
     private SoundPool _soundPool;
@@ -96,9 +86,6 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
 
             //Display events.
             displayEventHistory();
-
-            //Display temperature
-            displayTemperature();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -109,29 +96,16 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
     SensorService _sensorService;
     private ServiceConnection _connectionSensorService = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
+
             _sensorService = ((SensorService.LocalBinder)service).getService();
 
-            _sensorService.addBluetoothDeviceListener(_bluetoothDeviceListener);
-
-            //Set initinal settings.
-            _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
-            _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
-            _sensorService.setInterval(_setting.getMeasurementInterval());
-
             //Bind sensor events.
-            _sensorService.addLightEventListener(MainActivity.this);
-            _sensorService.addSwingEventListener(MainActivity.this);
-            _sensorService.addTemperatureEventListener(MainActivity.this);
-            _sensorService.addMeasuredEventListener(MainActivity.this);
+            _sensorService.addBluetoothDeviceListener(_bluetoothDeviceListener);
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            //Unbind sensor events.
-            _sensorService.removeLightEventListener(MainActivity.this);
-            _sensorService.removeSwingEventListener(MainActivity.this);
-            _sensorService.removeTemperatureEventListener(MainActivity.this);
-            _sensorService.removeMeasuredEventListner(MainActivity.this);
 
+            //Unbind sensor events.
             _sensorService.removeBluetoothDeviceListener(_bluetoothDeviceListener);
 
             _sensorService = null;
@@ -163,27 +137,48 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
         }
 
         @Override
-        public void onOpticalValueGet(final double value) {
-            _handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    _textviewOpticalValue.setText(value + "lux");
+        public void onTemperatureValueGet(final double  value) {
+            if(_sensorService.isTemperatureEnabled()){
+                _handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        _textView_temperature.setText(String.format("%.1f℃", value));
+                    }
+                });
+
+                if(value < _setting.getTemperatureLowerLimit() || _setting.getTemperatureUpperLimit() < value){
+                    //画面遷移前に全センサーを無効化(イベントの多重発生を防止)
+                    _sensorService.setAllSensorPaused(true);
+
+                    fireTemperatureEvent(value);
                 }
-            });
+            }
+        }
+
+        @Override
+        public void onOpticalValueGet(final double value) {
+            if(_sensorService.isOpticalEnabled()){
+                if(value > _setting.getOpticalThreshold()){
+                    //画面遷移前に全センサーを無効化(イベントの多重発生を防止)
+                    _sensorService.setAllSensorPaused(true);
+
+                    fireOpticalEvent(value);
+                }
+            }
         }
 
         @Override
         public void onMovementValueGet(final double accX, final double accY, final double accZ, final double gyroX, final double gyroY, final double gyroZ, final double magX, final double magY, final double magZ) {
-            _handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    _textviewMovementValue.setText(String.format("%.2f,%.2f,%.2f  %.2f,%.2f,%.2f  %.2f,%.2f,%.2f",accX, accY, accZ, gyroX, gyroY, gyroZ, magX, magY, magZ));
-                }
-            });
-        }
+            if(_sensorService.isMovementEnabled()){
+                double value = Math.sqrt(gyroX*gyroX+gyroY*gyroY+gyroZ*gyroZ);
+                if(value > _setting.getMovementThreshold()){
+                    //画面遷移前に全センサーを無効化(イベントの多重発生を防止)
+                    _sensorService.setAllSensorPaused(true);
 
-        @Override
-        public void onTemperatureValueGet(double value) {}
+                    fireMovementEvent(value);
+                }
+            }
+        }
     };
 
     @Override
@@ -200,14 +195,21 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
         Intent intent;
         switch (item.getItemId()) {
             case R.id.menuitem_settings:
+                //画面遷移前に全センサーを無効化(イベントの多重発生を防止)
+                _sensorService.setAllSensorPaused(true);
+
                 intent = new Intent(this, SettingActivity.class);
                 _setting.putToIntent(intent);
+                intent.putExtra(INTENT_KEY_TEMPERATURE_ENABLE, _sensorService.isTemperatureEnabled());
+                intent.putExtra(INTENT_KEY_OPTICAL_ENABLE, _sensorService.isOpticalEnabled());
+                intent.putExtra(INTENT_KEY_MOVEMENT_ENABLE, _sensorService.isMovementEnabled());
                 startActivityForResult(intent, SETTING_REQUEST);
+
                 return true;
             case R.id.menuitem_connect:
                 intent = new Intent(this, SelectDeviceActivity.class);
-                _setting.putToIntent(intent);
                 startActivityForResult(intent, SELECT_DEVICE_REQUEST);
+
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -248,14 +250,6 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
 
         //Display time.
         displayTime();
-
-        //Create Notification Channel
-        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationChannel channel = new NotificationChannel(getString(R.string.app_name), getString(R.string.app_name), NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setLightColor(Color.YELLOW);
-        channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-        manager.createNotificationChannel(channel);
-
     }
 
     @Override
@@ -310,9 +304,7 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
                 startActivityForResult(intent, SELECT_DEVICE_REQUEST);
             }
         });
-
-        _textviewOpticalValue = findViewById(R.id.textview_optcal_value);
-        _textviewMovementValue = findViewById(R.id.textview_movement_value);
+        _textviewConnectionStatusContent.setText("接続されていません");
 
         _textViewList = new ArrayList<>();
         _textViewList.add((TextView)findViewById(R.id.text_history1));
@@ -367,11 +359,6 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
 
    }
 
-   public void displayTemperature(){
-        if(_sensorService != null)
-       _textView_temperature.setText(String.format("%.1f℃", _sensorService.getTemperature()));
-   }
-
     @Override
     public void onClick(View v) {
         //Play sound effect of tapping button
@@ -391,68 +378,62 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
 
         //各イベント発生を手動で発生
         if(v == _buttonSimulateLightEvent){
-            _sensorService.fireLighted(false);
+            fireOpticalEvent(_setting.getOpticalThreshold() + 1);
         }else if(v == _buttonSimulateSwingEvent){
-            _sensorService.fireSwinged(false);
+            fireMovementEvent(_setting.getMovementThreshold() + 1);
         }
     }
 
-    /*
-      光イベント検知時
-     */
-    @Override
-    public void onLighted(LightEvent e){
-        if(!e.isNormal()){
-            //イベント対応画面に遷移
-            Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            e.putToIntent(intent);
-            _setting.putToIntent(intent);
-            startActivityForResult(intent, 0);
-        }
+    private void fireTemperatureEvent(double value){
+        //Save EventLog
+        EventLog eventLog = new EventLog();
+        eventLog.setType(EventLogType.TemperatureUnusual);
+        eventLog.setOccurredDate(new Date());
+        eventLog.setContent("温度が閾値:" + _setting.getTemperatureLowerLimit() + "," + _setting.getTemperatureUpperLimit() + "を超えました: " + value);
+        _eventLogStoreService.saveEvent(eventLog);
+
+        //イベント対応画面に遷移
+        Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+        eventLog.putToIntent(intent);
+        _setting.putToIntent(intent);
+        startActivityForResult(intent, TEMPERATURE_EVENT_REQUEST);
     }
 
-    /*
-      振動イベント検知時
-     */
-    @Override
-    public void onSwinged(SwingEvent e){
-        if(!e.isNormal()){
-            //イベント対応画面に遷移
-            Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
-            e.putToIntent(intent);
-            _setting.putToIntent(intent);
-            startActivityForResult(intent, 0);
-        }
+    private void fireOpticalEvent(double value){
+        //Save EventLog
+        EventLog eventLog = new EventLog();
+        eventLog.setType(EventLogType.Light);
+        eventLog.setOccurredDate(new Date());
+        eventLog.setContent("照度が閾値:" + _setting.getOpticalThreshold() + "を超えました: " + value);
+        _eventLogStoreService.saveEvent(eventLog);
+
+        //イベント対応画面に遷移
+        Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+        eventLog.putToIntent(intent);
+        _setting.putToIntent(intent);
+        startActivityForResult(intent, OPTICAL_EVENT_REQUEST);
     }
 
-    /*
-      温度イベント検知時のEventHandlerの仮実装
-     */
-    @Override
-    public void onTemperatureChanged(TemperatureEvent e){
-        if(!e.isNormal()){
-            //イベント対応画面に遷移
-            Intent intent = new Intent(this, TemperatureEventActivity.class);
-            e.putToIntent(intent);
-            startActivityForResult(intent, 0);
-        }
-    }
+    public void fireMovementEvent(double value){
+        //Save EventLog
+        EventLog eventLog = new EventLog();
+        eventLog.setType(EventLogType.Movement);
+        eventLog.setOccurredDate(new Date());
+        eventLog.setContent("動きが閾値:" + _setting.getMovementThreshold() + "を超えました: " + value);
+        _eventLogStoreService.saveEvent(eventLog);
 
-    @Override
-    public void onMeasured(MeasuredEvent e){
-        //Update temperature on UI thread.
-        _handler.post(new Runnable() {
-            @Override
-            public void run() {
-                displayTemperature();
-            }
-        });
+        //イベント対応画面に遷移
+        Intent intent = new Intent(this, HandlingRequiredEventActivity.class);
+        eventLog.putToIntent(intent);
+        _setting.putToIntent(intent);
+        startActivityForResult(intent, MOVEMENT_EVENT_REQUEST);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
+        EventLog eventLog;
         switch(requestCode){
             case  SELECT_DEVICE_REQUEST:
                 if(resultCode == RESULT_OK){
@@ -463,15 +444,75 @@ public class MainActivity extends AppCompatActivity  implements OnClickListener,
                 }
                 break;
             case SETTING_REQUEST:
-                if(requestCode == RESULT_OK){
-                    if(Setting.getFromIntent(intent) != null) {
-                        //設定画面で値を変更した場合は、その内容を反映する
-                        _setting = Setting.getFromIntent(intent);
-                        _sensorService.setTemperatureUpperLimit(_setting.getTemperatureUpperLimit());
-                        _sensorService.setTemperatureLowerLimit(_setting.getTemperatureLowerLimit());
-                        _sensorService.setInterval(_setting.getMeasurementInterval());
-                    }
+                if(resultCode == RESULT_OK){
+                    //設定画面で値を変更した場合は、その内容を取得する
+                    _setting = Setting.getFromIntent(intent);
+
+                    //センサーの有効化状態を取得し、設定する
+                    _sensorService.setTemperatureEnabled(intent.getBooleanExtra(INTENT_KEY_TEMPERATURE_ENABLE, true));
+                    _sensorService.setOpticalEnabled(intent.getBooleanExtra(INTENT_KEY_OPTICAL_ENABLE, true));
+                    _sensorService.setMovementEnabled(intent.getBooleanExtra(INTENT_KEY_MOVEMENT_ENABLE, true));
+
+                    //全センサー無効化を解除
+                    _sensorService.setAllSensorPaused(false);
                 }
+                break;
+            case TEMPERATURE_EVENT_REQUEST:
+                //温度センサーの再開は利用者の選択に応じて
+                if(resultCode == RESULT_OK){
+                    //計測を再開
+                    _sensorService.setTemperatureEnabled(true);
+                }else{
+                    //計測は停止したまま
+                    _sensorService.setTemperatureEnabled(false);
+                }
+
+                //全センサー無効化を解除
+                _sensorService.setAllSensorPaused(false);
+
+                //対応内容をイベントログに記録
+                eventLog = EventLog.getFromIntent(intent);
+                _eventLogStoreService.saveEvent(eventLog);
+
+                break;
+
+            case OPTICAL_EVENT_REQUEST:
+                //照度センサーの再開は利用者の選択に応じて
+                if(resultCode == RESULT_OK){
+                    //計測を再開
+                    _sensorService.setOpticalEnabled(true);
+                }else{
+                    //計測は停止したまま
+                    _sensorService.setOpticalEnabled(false);
+                }
+
+                //全センサー無効化を解除
+                _sensorService.setAllSensorPaused(false);
+
+                //対応内容をイベントログに記録
+                eventLog = EventLog.getFromIntent(intent);
+                _eventLogStoreService.saveEvent(eventLog);
+
+                break;
+
+            case MOVEMENT_EVENT_REQUEST:
+                //温度センサーの再開は利用者の選択に応じて
+                if(resultCode == RESULT_OK){
+                    //計測を再開
+                    _sensorService.setMovementEnabled(true);
+                }else{
+                    //計測は停止したまま
+                    _sensorService.setMovementEnabled(false);
+                }
+
+                //全センサー無効化を解除
+                _sensorService.setAllSensorPaused(false);
+
+                //対応内容をイベントログに記録
+                eventLog = EventLog.getFromIntent(intent);
+                _eventLogStoreService.saveEvent(eventLog);
+
+                break;
         }
 
         //イベント履歴を再度取得して表示

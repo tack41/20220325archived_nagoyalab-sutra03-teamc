@@ -22,7 +22,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".EventLogDetailActivity" />
-        <activity android:name=".TemperatureEventActivity" />
         <activity android:name=".HandlingRequiredEventActivity" />
         <activity android:name=".SettingActivity" />
         <activity

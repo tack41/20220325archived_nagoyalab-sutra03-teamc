@@ -10,9 +10,6 @@ import android.util.Log;
 import android.content.Intent;
 
 import com.slack.nagoyalab_sutra03.teamc.mimamorukun.MyApplication;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.LightEvent;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.SwingEvent;
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,33 +48,7 @@ public class EventLogStoreService extends Service {
         return true;
     }
 
-    public synchronized int saveEvent(LightEvent event){
-        //Create EventLog object from event.
-        EventLog eventLog = new EventLog();
-        eventLog.setType(EventLogType.Light);
-        eventLog.setContent("端末が光を検知しました");
-        eventLog.setOccurredDate(new java.util.Date());
-
-        return insertEventLog(eventLog);
-    }
-
-    public synchronized int saveEvent(SwingEvent event){
-        //Create EventLog object from event.
-        EventLog eventLog = new EventLog();
-        eventLog.setType(EventLogType.Swing);
-        eventLog.setContent("端末が振動を検知しました");
-        eventLog.setOccurredDate(new java.util.Date());
-
-        return insertEventLog(eventLog);
-    }
-
-    public synchronized int saveEvent(TemperatureEvent event){
-        //Create EventLog object from event.
-        EventLog eventLog = new EventLog();
-        eventLog.setType(EventLogType.TemperatureUnusual);
-        eventLog.setContent("温度異常を検知しました(" + event.getTemperature() + "℃)");
-        eventLog.setOccurredDate(new java.util.Date());
-
+    public synchronized int saveEvent(EventLog eventLog){
         return insertEventLog(eventLog);
     }
 

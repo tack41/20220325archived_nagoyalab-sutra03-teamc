@@ -4,10 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.Intent;
 
-import com.slack.nagoyalab_sutra03.teamc.mimamorukun.Sensor.TemperatureEvent;
-
-import java.util.Date;
-
 /**
  * Manage settings of this application
  */
@@ -24,16 +20,20 @@ public class Setting {
     public float getTemperatureLowerLimit(){return _temperatureLowerLimit;}
     public void setTemperatureLowerLimit(float temperatureLowerLimit){_temperatureLowerLimit = temperatureLowerLimit;}
 
-    // Measurement interval(s)
-    private int _measurementInterval;
-    public int getMeasurementInterval(){return _measurementInterval;};
-    public void setMeasurementInterval(int measurementInterval){_measurementInterval = measurementInterval;}
+    private float _opticalThreshold;
+    public float getOpticalThreshold(){return _opticalThreshold;}
+    public void setOpticalThreshold(float opticalThreshold){_opticalThreshold = opticalThreshold;}
+
+    private float _movementThreshold;
+    public float getMovementThreshold(){return _movementThreshold;}
+    public void setMovementThreshold(float gyroThreshold){_movementThreshold = gyroThreshold;}
 
     private static final String _STORAGE_NAME = "SettingStorageNameMimamoruKun";
     private static final String _KEY_USER_NAME = "SettingKeyUserName";
     private static final String _KEY_TEMPERATURE_UPPER_LIMIT = "SettingKeyTemperatureUpperLimit";
     private static final String _KEY_TEMPERATURE_LOWER_LIMIT = "SettingKeyTemperatureLowerLimit";
-    private static final String _KEY_MEASUREMENT_INTERVAL = "SettingKeyMeasurementInterval";
+    private static final String _KEY_OPTICAL_THRESHOLD = "SettingKeyOpticalThreashold";
+    private static final String _KEY_MOVEMENT_THRESHOLD = "SettingKeyMovementThreshold";
 
     /**
      * Save all settings to permanent storage.
@@ -45,7 +45,8 @@ public class Setting {
         editor.putString(_KEY_USER_NAME, _userName);
         editor.putFloat(_KEY_TEMPERATURE_UPPER_LIMIT, _temperatureUpperLimit);
         editor.putFloat(_KEY_TEMPERATURE_LOWER_LIMIT, _temperatureLowerLimit);
-        editor.putInt(_KEY_MEASUREMENT_INTERVAL, _measurementInterval);
+        editor.putFloat(_KEY_OPTICAL_THRESHOLD, _opticalThreshold);
+        editor.putFloat(_KEY_MOVEMENT_THRESHOLD, _movementThreshold);
         editor.apply();
     }
 
@@ -61,8 +62,8 @@ public class Setting {
         retVal.setUserName(prefs.getString(_KEY_USER_NAME,""));
         retVal.setTemperatureUpperLimit(prefs.getFloat(_KEY_TEMPERATURE_UPPER_LIMIT, 30.0f));
         retVal.setTemperatureLowerLimit(prefs.getFloat(_KEY_TEMPERATURE_LOWER_LIMIT, 10.0f));
-        retVal.setMeasurementInterval(prefs.getInt(_KEY_MEASUREMENT_INTERVAL, 30));
-
+        retVal.setOpticalThreshold(prefs.getFloat(_KEY_OPTICAL_THRESHOLD, 30.0f));
+        retVal.setMovementThreshold(prefs.getFloat(_KEY_MOVEMENT_THRESHOLD, 30.0f));
         return retVal;
     }
 
@@ -71,7 +72,8 @@ public class Setting {
         intent.putExtra(_KEY_USER_NAME, _userName);
         intent.putExtra(_KEY_TEMPERATURE_UPPER_LIMIT, _temperatureUpperLimit);
         intent.putExtra(_KEY_TEMPERATURE_LOWER_LIMIT, _temperatureLowerLimit);
-        intent.putExtra(_KEY_MEASUREMENT_INTERVAL, _measurementInterval);
+        intent.putExtra(_KEY_OPTICAL_THRESHOLD, _opticalThreshold);
+        intent.putExtra(_KEY_MOVEMENT_THRESHOLD, _movementThreshold);
     }
 
     public static Setting getFromIntent(Intent intent){
@@ -82,7 +84,8 @@ public class Setting {
             retVal.setUserName(intent.getStringExtra(_KEY_USER_NAME));
             retVal.setTemperatureUpperLimit(intent.getFloatExtra(_KEY_TEMPERATURE_UPPER_LIMIT, 30.0f));
             retVal.setTemperatureLowerLimit(intent.getFloatExtra(_KEY_TEMPERATURE_LOWER_LIMIT, 10.0f));
-            retVal.setMeasurementInterval(intent.getIntExtra(_KEY_MEASUREMENT_INTERVAL, 30));
+            retVal.setOpticalThreshold(intent.getFloatExtra(_KEY_OPTICAL_THRESHOLD, 30.0f));
+            retVal.setMovementThreshold(intent.getFloatExtra(_KEY_MOVEMENT_THRESHOLD, 30.0f));
         }
 
         return retVal;
